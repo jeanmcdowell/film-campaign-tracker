@@ -551,6 +551,13 @@ function App() {
     const [openDiscs, setOpenDiscs] = useState({});
     const toggle = id => setOpenDiscs(p => ({...p, [id]: !p[id]}));
     const [showOther, setShowOther] = useState(false);
+
+    /* ── Filter state ──────────────────────────────────────── */
+    const [filterDisc, setFilterDisc] = useState("all");       // "all" or discipline id
+    const [filterStatus, setFilterStatus] = useState("all");   // "all" | "not-started" | "in-progress" | "complete" | "blocked"
+    const [searchText, setSearchText] = useState("");
+
+    /* ── Stats (always from full unfiltered data) ──────────── */
     const totalTasks = allTasks.length;
     const notStartedTasks = allTasks.filter(t => t.status === "not-started").length;
     const inProgressTasks = allTasks.filter(t => t.status === "in-progress").length;
@@ -558,10 +565,30 @@ function App() {
     const blockedTasks = allTasks.filter(t => t.status === "blocked").length;
     const pctComplete = totalTasks > 0 ? Math.round((completeTasks / totalTasks) * 100) : 0;
 
+    /* ── Filtering logic (AND across all active filters) ───── */
+    const searchLower = searchText.trim().toLowerCase();
+    const hasActiveFilter = filterDisc !== "all" || filterStatus !== "all" || searchLower.length > 0;
+
+    const filteredDiscs = disciplines
+      .filter(d => filterDisc === "all" || d.id === filterDisc)
+      .map(d => {
+        const filtered = d.tasks.filter(t => {
+          if (filterStatus !== "all" && t.status !== filterStatus) return false;
+          if (searchLower && !t.title.toLowerCase().includes(searchLower) && !(t.description || "").toLowerCase().includes(searchLower)) return false;
+          return true;
+        });
+        return {...d, tasks: filtered, _origCount: d.tasks.length};
+      });
+
+    const filteredTaskCount = filteredDiscs.reduce((sum, d) => sum + d.tasks.length, 0);
+
+    /* ── Disciplines that have tasks in the library ───────── */
+    const discsWithTasks = disciplines.filter(d => d.tasks.length > 0);
+
     return (
       <div>
         {/* Stats Dashboard */}
-        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:24}}>
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:20}}>
           {[
             {label:"Total Tasks", value: totalTasks, color: campaignColor},
             {label:"Not Started", value: notStartedTasks, color: STATUS_COLORS["not-started"]},
@@ -578,6 +605,72 @@ function App() {
           ))}
         </div>
 
+        {/* ── Filter Bar ──────────────────────────────────────── */}
+        {totalTasks > 0 && (
+          <div style={{background:"#fff",borderRadius:10,padding:"12px 16px",marginBottom:20,border:"1px solid #e5e7eb",boxShadow:"0 1px 3px rgba(0,0,0,0.04)"}}>
+            <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap"}}>
+              {/* Search box */}
+              <div style={{position:"relative",flex:"1 1 200px",minWidth:180}}>
+                <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",fontSize:14,color:"#aaa",pointerEvents:"none"}}>&#128269;</span>
+                <input
+                  type="text" placeholder="Search tasks by name or description\u2026"
+                  value={searchText} onChange={e=>setSearchText(e.target.value)}
+                  style={{width:"100%",padding:"8px 10px 8px 32px",borderRadius:6,border:"1px solid #d1d5db",fontSize:12,outline:"none",background:"#fafafa",transition:"border .15s"}}
+                />
+                {searchText && (
+                  <button onClick={()=>setSearchText("")} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",color:"#999",fontSize:14,lineHeight:1,padding:0}}>&times;</button>
+                )}
+              </div>
+
+              {/* Discipline dropdown */}
+              <select
+                value={filterDisc} onChange={e=>setFilterDisc(e.target.value)}
+                style={{padding:"8px 10px",borderRadius:6,border:"1px solid #d1d5db",fontSize:12,background:"#fafafa",cursor:"pointer",minWidth:160}}
+              >
+                <option value="all">All Disciplines</option>
+                {disciplines.filter(d=>d.tasks.length>0).map(d => (
+                  <option key={d.id} value={d.id}>{d.name} ({d.tasks.length})</option>
+                ))}
+              </select>
+
+              {/* Status filter buttons */}
+              <div style={{display:"flex",gap:4}}>
+                {[
+                  {key:"all", label:"All"},
+                  {key:"not-started", label:"Not Started", color: STATUS_COLORS["not-started"]},
+                  {key:"in-progress", label:"In Progress", color: STATUS_COLORS["in-progress"]},
+                  {key:"complete", label:"Complete", color: STATUS_COLORS["complete"]},
+                  {key:"blocked", label:"Blocked", color: STATUS_COLORS["blocked"]}
+                ].filter(s => s.key !== "blocked" || blockedTasks > 0).map(s => {
+                  const active = filterStatus === s.key;
+                  const col = s.color || campaignColor;
+                  return (
+                    <button key={s.key} onClick={()=>setFilterStatus(s.key)}
+                      style={{padding:"6px 12px",borderRadius:16,border: active ? `2px solid ${col}` : "1px solid #d1d5db",
+                        background: active ? col + "18" : "#fff", color: active ? col : "#888",
+                        fontSize:11,fontWeight:active?700:500,cursor:"pointer",whiteSpace:"nowrap",transition:"all .15s"}}
+                    >{s.label}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Filter result count + clear */}
+            {hasActiveFilter && (
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:10,paddingTop:8,borderTop:"1px solid #f0f0f0"}}>
+                <span style={{fontSize:12,color:"#666"}}>
+                  Showing <strong style={{color:"#1a1a2e"}}>{filteredTaskCount}</strong> of {totalTasks} task{totalTasks !== 1 ? "s" : ""}
+                  {filterDisc !== "all" ? ` in ${disciplines.find(d=>d.id===filterDisc)?.name || ""}` : ""}
+                  {filterStatus !== "all" ? ` \u00b7 ${STATUS_LABELS[filterStatus]}` : ""}
+                  {searchLower ? ` \u00b7 matching "${searchText.trim()}"` : ""}
+                </span>
+                <button onClick={()=>{setFilterDisc("all");setFilterStatus("all");setSearchText("");}}
+                  style={{fontSize:11,color:campaignColor,background:"none",border:"none",cursor:"pointer",fontWeight:600,textDecoration:"underline"}}>Clear Filters</button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Empty state */}
         {totalTasks === 0 && (
           <div style={{background:"#fff",borderRadius:12,padding:"40px 24px",textAlign:"center",marginBottom:24,border:"2px dashed #e5e7eb"}}>
@@ -589,9 +682,22 @@ function App() {
           </div>
         )}
 
+        {/* No filter results */}
+        {totalTasks > 0 && hasActiveFilter && filteredTaskCount === 0 && (
+          <div style={{background:"#fff",borderRadius:10,padding:"28px 24px",textAlign:"center",marginBottom:16,border:"1px solid #e5e7eb"}}>
+            <div style={{fontSize:28,marginBottom:8}}>&#128270;</div>
+            <div style={{fontSize:14,fontWeight:600,color:"#1a1a2e",marginBottom:4}}>No tasks match your filters</div>
+            <div style={{fontSize:12,color:"#888",marginBottom:12}}>Try adjusting your search or filter criteria.</div>
+            <button onClick={()=>{setFilterDisc("all");setFilterStatus("all");setSearchText("");}}
+              style={{padding:"8px 20px",borderRadius:6,border:"none",background:campaignColor,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Clear All Filters</button>
+          </div>
+        )}
+
         {/* M&D Disciplines */}
-        {disciplines.map(disc => {
-          const isOpen = openDiscs[disc.id];
+        {filteredDiscs.map(disc => {
+          /* When filtering, skip disciplines with 0 matching tasks (unless no filter active) */
+          if (hasActiveFilter && disc.tasks.length === 0) return null;
+          const isOpen = openDiscs[disc.id] || hasActiveFilter;  /* auto-expand when filtering */
           const discNotStarted = disc.tasks.filter(t=>t.status==="not-started").length;
           const discInProgress = disc.tasks.filter(t=>t.status==="in-progress").length;
           const discComplete = disc.tasks.filter(t=>t.status==="complete").length;
@@ -604,7 +710,12 @@ function App() {
                 <button onClick={()=>toggle(disc.id)} style={{flex:1,display:"flex",alignItems:"center",gap:10,background:"none",border:"none",cursor:"pointer",textAlign:"left",padding:"4px 0"}}>
                   <div style={{width:4,height:32,borderRadius:2,background:disc.color}} />
                   <div>
-                    <div style={{fontSize:15,fontWeight:600,color:"#1a1a2e"}}>{disc.name}</div>
+                    <div style={{fontSize:15,fontWeight:600,color:"#1a1a2e"}}>
+                      {disc.name}
+                      {hasActiveFilter && disc._origCount !== disc.tasks.length ? (
+                        <span style={{fontSize:11,fontWeight:400,color:"#999",marginLeft:6}}>({disc.tasks.length} of {disc._origCount})</span>
+                      ) : null}
+                    </div>
                     <div style={{fontSize:11,color:"#888",marginTop:2}}>
                       {disc.tasks.length > 0 ? (
                         <span>
@@ -623,7 +734,7 @@ function App() {
                 </button>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
                   <button onClick={()=>setAddingTaskDisc({discId:disc.id, discName:disc.name})} style={{padding:"5px 12px",borderRadius:5,border:"none",background:campaignColor+"15",color:campaignColor,fontSize:11,fontWeight:600,cursor:"pointer"}}>+ Add Tasks</button>
-                  {!isLibraryDisc && disc.tasks.length === 0 && (
+                  {!isLibraryDisc && disc._origCount === 0 && (
                     <button onClick={()=>{if(confirm('Remove "'+disc.name+'" discipline?'))removeDiscipline(disc.id);}} style={{padding:"5px 8px",borderRadius:5,border:"none",background:"#fef2f2",color:"#ef4444",fontSize:11,cursor:"pointer"}}>&times;</button>
                   )}
                   <ChevDown open={isOpen} />
@@ -655,30 +766,34 @@ function App() {
         })}
 
         {/* Add Custom Discipline */}
-        <button onClick={()=>setAddingDiscipline(true)} style={{width:"100%",padding:"14px 0",borderRadius:8,border:"2px dashed #d1d5db",background:"transparent",color:"#888",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:24}}>
-          + Add Custom Discipline
-        </button>
+        {!hasActiveFilter && (
+          <button onClick={()=>setAddingDiscipline(true)} style={{width:"100%",padding:"14px 0",borderRadius:8,border:"2px dashed #d1d5db",background:"transparent",color:"#888",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:24}}>
+            + Add Custom Discipline
+          </button>
+        )}
 
         {/* Other Phases Reference */}
-        <div style={{marginTop:16}}>
-          <button onClick={()=>setShowOther(!showOther)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,color:"#888"}}>
-            <ChevDown open={showOther} s={14} /> Other Pipeline Phases (Reference)
-          </button>
-          {showOther && (
-            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginTop:8}}>
-              {OTHER_PHASES.map(p => (
-                <div key={p.name} style={{background:"#fff",borderRadius:8,padding:"14px 16px",border:"1px solid #e5e7eb"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                    <span style={{fontSize:20}}>{p.icon}</span>
-                    <span style={{fontSize:14,fontWeight:600,color:"#1a1a2e"}}>{p.name}</span>
-                    <span style={{fontSize:11,color:"#999",marginLeft:"auto"}}>{p.taskCount} tasks</span>
+        {!hasActiveFilter && (
+          <div style={{marginTop:16}}>
+            <button onClick={()=>setShowOther(!showOther)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,color:"#888"}}>
+              <ChevDown open={showOther} s={14} /> Other Pipeline Phases (Reference)
+            </button>
+            {showOther && (
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginTop:8}}>
+                {OTHER_PHASES.map(p => (
+                  <div key={p.name} style={{background:"#fff",borderRadius:8,padding:"14px 16px",border:"1px solid #e5e7eb"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                      <span style={{fontSize:20}}>{p.icon}</span>
+                      <span style={{fontSize:14,fontWeight:600,color:"#1a1a2e"}}>{p.name}</span>
+                      <span style={{fontSize:11,color:"#999",marginLeft:"auto"}}>{p.taskCount} tasks</span>
+                    </div>
+                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>{p.description}</div>
                   </div>
-                  <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>{p.description}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
