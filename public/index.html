@@ -920,18 +920,28 @@ function App() {
   /* ── CALENDAR VIEW ──────────────────────────────────────── */
   const CalendarView = () => {
     const [currentMonth, setCurrentMonth] = useState(() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); });
+    const [expandedDate, setExpandedDate] = useState(null);
     const year = parseInt(currentMonth.split("-")[0]);
     const month = parseInt(currentMonth.split("-")[1]) - 1;
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const prevMonth = () => { const d = new Date(year, month - 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); };
-    const nextMonth = () => { const d = new Date(year, month + 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); };
+    const prevMonth = () => { const d = new Date(year, month - 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); setExpandedDate(null); };
+    const nextMonth = () => { const d = new Date(year, month + 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); setExpandedDate(null); };
     const monthStr = new Date(year, month, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
 
     const getTasksForDay = (day) => {
       const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
       return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
     };
+
+    const handleDateClick = (day, tasks) => {
+      if (tasks.length === 0) return;
+      const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      setExpandedDate(expandedDate === dateStr ? null : dateStr);
+    };
+
+    const expandedTasks = expandedDate ? allTasks.filter(t => t.startDate && t.endDate && expandedDate >= t.startDate && expandedDate <= t.endDate) : [];
+    const expandedDateFormatted = expandedDate ? new Date(expandedDate + "T12:00:00").toLocaleDateString("en-US", {weekday:"long", month:"long", day:"numeric", year:"numeric"}) : "";
 
     const cells = [];
     for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} style={{background:"#fafafa",borderRadius:4,minHeight:80}} />);
@@ -940,13 +950,16 @@ function App() {
       const tasks = getTasksForDay(day);
       const isToday = dateStr === new Date().toISOString().slice(0,10);
       const isRelease = dateStr === releaseDate;
+      const isExpanded = expandedDate === dateStr;
       cells.push(
-        <div key={day} style={{background:isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:"hidden"}}>
-          <div style={{fontSize:12,fontWeight:isToday||isRelease?700:500,color:isRelease?"#ef4444":isToday?"#3b82f6":"#555",marginBottom:4}}>{day}{isRelease ? " \u{1F3AC}" : ""}</div>
+        <div key={day} onClick={()=>handleDateClick(day,tasks)} style={{background:isExpanded?campaignColor+"12":isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isExpanded?`2px solid ${campaignColor}`:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:"hidden",cursor:tasks.length>0?"pointer":"default",transition:"all 0.15s ease"}}>
+          <div style={{fontSize:12,fontWeight:isToday||isRelease||isExpanded?700:500,color:isExpanded?campaignColor:isRelease?"#ef4444":isToday?"#3b82f6":"#555",marginBottom:4}}>
+            {day}{isRelease ? " \u{1F3AC}" : ""}{tasks.length > 0 ? <span style={{fontSize:9,color:"#999",fontWeight:400,marginLeft:4}}>({tasks.length})</span> : ""}
+          </div>
           {tasks.slice(0, 3).map(t => (
-            <div key={t.id} onClick={()=>{ const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id)); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:campaignColor+"18",color:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${campaignColor}`}} title={t.title}>{t.title}</div>
+            <div key={t.id} onClick={(e)=>{ e.stopPropagation(); const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id)); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:campaignColor+"18",color:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${campaignColor}`}} title={t.title}>{t.title}</div>
           ))}
-          {tasks.length > 3 && <div style={{fontSize:9,color:"#999"}}>+{tasks.length-3} more</div>}
+          {tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
         </div>
       );
     }
@@ -962,6 +975,45 @@ function App() {
           {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=><div key={d} style={{fontSize:11,fontWeight:700,color:"#999",textAlign:"center",padding:"4px 0"}}>{d}</div>)}
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>{cells}</div>
+
+        {/* ── Expanded Date Detail Panel ── */}
+        {expandedDate && expandedTasks.length > 0 && (
+          <div style={{marginTop:12,background:"#f8fafc",borderRadius:8,border:`1px solid ${campaignColor}33`,overflow:"hidden"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",background:campaignColor+"10",borderBottom:`1px solid ${campaignColor}22`}}>
+              <div>
+                <span style={{fontSize:14,fontWeight:700,color:"#1a1a2e"}}>{expandedDateFormatted}</span>
+                <span style={{fontSize:12,color:"#666",marginLeft:8}}>{expandedTasks.length} task{expandedTasks.length !== 1 ? "s" : ""} active</span>
+              </div>
+              <button onClick={()=>setExpandedDate(null)} style={{background:"none",border:"none",fontSize:18,color:"#999",cursor:"pointer",padding:"0 4px",lineHeight:1}}>&times;</button>
+            </div>
+            <div style={{padding:"8px 12px",maxHeight:320,overflowY:"auto"}}>
+              {expandedTasks.map(t => {
+                const disc = disciplines.find(d => d.tasks.some(tk => tk.id === t.id));
+                const discName = disc ? disc.name : "";
+                const discColor = disc ? disc.color : "#666";
+                return (
+                  <div key={t.id} onClick={()=>{ if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 6px",borderBottom:"1px solid #eee",cursor:"pointer",borderRadius:4,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background="#fff"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                    <div style={{width:4,minHeight:36,borderRadius:2,background:discColor,flexShrink:0,marginTop:2}} />
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#1a1a2e",marginBottom:2}}>{t.title}</div>
+                      <div style={{fontSize:10,color:discColor,fontWeight:600,marginBottom:3}}>{discName}</div>
+                      {t.description && <div style={{fontSize:10,color:"#666",lineHeight:1.4,marginBottom:3}}>{t.description.length > 120 ? t.description.slice(0,120) + "..." : t.description}</div>}
+                      <div style={{display:"flex",alignItems:"center",gap:8,fontSize:10,color:"#888"}}>
+                        <span>{t.startDate ? new Date(t.startDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "?"} &ndash; {t.endDate ? new Date(t.endDate+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}) : "?"}</span>
+                        {t.roles && t.roles.length > 0 && <span style={{color:"#aaa"}}>|</span>}
+                        {t.roles && t.roles.length > 0 && <span>{t.roles.slice(0,2).join(", ")}{t.roles.length > 2 ? ` +${t.roles.length-2}` : ""}</span>}
+                      </div>
+                    </div>
+                    <div style={{flexShrink:0}}>
+                      <span style={{display:"inline-block",fontSize:9,padding:"2px 7px",borderRadius:3,background:STATUS_COLORS[t.status]+"22",color:STATUS_COLORS[t.status],fontWeight:700,whiteSpace:"nowrap"}}>{t.status.replace("-"," ")}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {disciplines.filter(d=>d.tasks.length>0).length > 0 && (
           <div style={{marginTop:12,display:"flex",flexWrap:"wrap",gap:8}}>
             {disciplines.filter(d=>d.tasks.length>0).map(d => <span key={d.id} style={{fontSize:10,padding:"3px 8px",borderRadius:10,background:d.color+"18",color:d.color,fontWeight:600}}>{d.name}</span>)}
