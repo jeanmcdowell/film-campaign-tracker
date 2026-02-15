@@ -940,6 +940,7 @@ function App() {
     const [currentMonth, setCurrentMonth] = useState(() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); });
     const [expandedDate, setExpandedDate] = useState(null);
     const [calendarDiscFilter, setCalendarDiscFilter] = useState("all");
+    const [calendarRangeMode, setCalendarRangeMode] = useState("span"); // "span" = every day, "endpoints" = start/end only
     const year = parseInt(currentMonth.split("-")[0]);
     const month = parseInt(currentMonth.split("-")[1]) - 1;
     const firstDay = new Date(year, month, 1).getDay();
@@ -953,7 +954,12 @@ function App() {
 
     const getTasksForDay = (day) => {
       const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-      let tasks = allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+      let tasks;
+      if (calendarRangeMode === "endpoints") {
+        tasks = allTasks.filter(t => t.startDate && t.endDate && (t.startDate === dateStr || t.endDate === dateStr)).map(t => ({...t, _dayType: t.startDate === dateStr && t.endDate === dateStr ? "single" : t.startDate === dateStr ? "start" : "end"}));
+      } else {
+        tasks = allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate).map(t => ({...t, _dayType: t.startDate === dateStr ? "start" : t.endDate === dateStr ? "end" : "mid"}));
+      }
       if (calendarDiscFilter !== "all") {
         const disc = disciplines.find(d => d.id === calendarDiscFilter);
         if (disc) { const discTaskIds = new Set(disc.tasks.map(t => t.id)); tasks = tasks.filter(t => discTaskIds.has(t.id)); }
@@ -991,8 +997,9 @@ function App() {
           {visibleTasks.map(t => {
             const pillColor = t.disciplineColor || campaignColor;
             const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
+            const dayTag = calendarRangeMode === "endpoints" ? (t._dayType === "start" ? "\u25B6 " : t._dayType === "end" ? "\u25C0 " : "\u25C6 ") : "";
             return (
-              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={`${t.title} (${t.disciplineName || ""})`}>{t.title}</div>
+              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={`${t.title} (${t.disciplineName || ""})\n${t.startDate} \u2013 ${t.endDate}`}>{dayTag}{t.title}</div>
             );
           })}
           {!isExpanded && tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
@@ -1017,6 +1024,15 @@ function App() {
             ))}
           </div>
         )}
+        {/* ── Span vs Endpoints Toggle ── */}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+          <span style={{fontSize:10,color:"#888",fontWeight:600}}>Show tasks:</span>
+          <div style={{display:"flex",borderRadius:6,overflow:"hidden",border:"1px solid #ddd"}}>
+            <button onClick={()=>setCalendarRangeMode("span")} style={{fontSize:10,padding:"4px 12px",border:"none",background:calendarRangeMode==="span"?campaignColor:"#fff",color:calendarRangeMode==="span"?"#fff":"#666",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>Full Span</button>
+            <button onClick={()=>setCalendarRangeMode("endpoints")} style={{fontSize:10,padding:"4px 12px",border:"none",borderLeft:"1px solid #ddd",background:calendarRangeMode==="endpoints"?campaignColor:"#fff",color:calendarRangeMode==="endpoints"?"#fff":"#666",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>Start / End Only</button>
+          </div>
+          {calendarRangeMode === "endpoints" && <span style={{fontSize:9,color:"#999"}}>{"\u25B6"} = start &nbsp; {"\u25C0"} = end &nbsp; {"\u25C6"} = same day</span>}
+        </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
           {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=><div key={d} style={{fontSize:11,fontWeight:700,color:"#999",textAlign:"center",padding:"4px 0"}}>{d}</div>)}
         </div>
