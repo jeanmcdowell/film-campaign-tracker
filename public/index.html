@@ -951,15 +951,21 @@ function App() {
       const isToday = dateStr === new Date().toISOString().slice(0,10);
       const isRelease = dateStr === releaseDate;
       const isExpanded = expandedDate === dateStr;
+      const visibleTasks = isExpanded ? tasks : tasks.slice(0, 3);
       cells.push(
-        <div key={day} onClick={()=>handleDateClick(day,tasks)} style={{background:isExpanded?campaignColor+"12":isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isExpanded?`2px solid ${campaignColor}`:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:"hidden",cursor:tasks.length>0?"pointer":"default",transition:"all 0.15s ease"}}>
+        <div key={day} onClick={()=>handleDateClick(day,tasks)} style={{background:isExpanded?campaignColor+"12":isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isExpanded?`2px solid ${campaignColor}`:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:isExpanded?"visible":"hidden",cursor:tasks.length>0?"pointer":"default",transition:"all 0.15s ease",position:"relative",zIndex:isExpanded?2:1}}>
           <div style={{fontSize:12,fontWeight:isToday||isRelease||isExpanded?700:500,color:isExpanded?campaignColor:isRelease?"#ef4444":isToday?"#3b82f6":"#555",marginBottom:4}}>
             {day}{isRelease ? " \u{1F3AC}" : ""}{tasks.length > 0 ? <span style={{fontSize:9,color:"#999",fontWeight:400,marginLeft:4}}>({tasks.length})</span> : ""}
           </div>
-          {tasks.slice(0, 3).map(t => (
-            <div key={t.id} onClick={(e)=>{ e.stopPropagation(); const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id)); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:campaignColor+"18",color:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${campaignColor}`}} title={t.title}>{t.title}</div>
-          ))}
-          {tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
+          {visibleTasks.map(t => {
+            const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
+            const discColor = disc ? disc.color : campaignColor;
+            return (
+              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:isExpanded?discColor+"18":campaignColor+"18",color:isExpanded?discColor:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${isExpanded?discColor:campaignColor}`}} title={t.title}>{t.title}</div>
+            );
+          })}
+          {!isExpanded && tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
+          {isExpanded && tasks.length > 3 && <div style={{fontSize:9,color:"#999",marginTop:2,cursor:"pointer"}}>click to collapse &uarr;</div>}
         </div>
       );
     }
