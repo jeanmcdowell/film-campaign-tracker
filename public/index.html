@@ -971,11 +971,10 @@ function App() {
             {day}{isRelease ? " \u{1F3AC}" : ""}{tasks.length > 0 ? <span style={{fontSize:9,color:"#999",fontWeight:400,marginLeft:4}}>({tasks.length})</span> : ""}
           </div>
           {visibleTasks.map(t => {
+            const pillColor = t.disciplineColor || campaignColor;
             const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
-            const discColor = disc ? disc.color : campaignColor;
-            const pillColor = discColor;
             return (
-              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={t.title}>{t.title}</div>
+              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={`${t.title} (${t.disciplineName || ""})`}>{t.title}</div>
             );
           })}
           {!isExpanded && tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
@@ -1017,9 +1016,9 @@ function App() {
             </div>
             <div style={{padding:"8px 12px",maxHeight:320,overflowY:"auto"}}>
               {expandedTasks.map(t => {
+                const discColor = t.disciplineColor || "#666";
+                const discName = t.disciplineName || "";
                 const disc = disciplines.find(d => d.tasks.some(tk => tk.id === t.id));
-                const discName = disc ? disc.name : "";
-                const discColor = disc ? disc.color : "#666";
                 return (
                   <div key={t.id} onClick={()=>{ if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{display:"flex",alignItems:"flex-start",gap:10,padding:"8px 6px",borderBottom:"1px solid #eee",cursor:"pointer",borderRadius:4,transition:"background 0.1s"}} onMouseEnter={e=>e.currentTarget.style.background="#fff"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
                     <div style={{width:4,minHeight:36,borderRadius:2,background:discColor,flexShrink:0,marginTop:2}} />
