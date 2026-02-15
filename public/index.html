@@ -940,7 +940,7 @@ function App() {
     const [currentMonth, setCurrentMonth] = useState(() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); });
     const [expandedDate, setExpandedDate] = useState(null);
     const [calendarDiscFilter, setCalendarDiscFilter] = useState("all");
-    const [calendarRangeMode, setCalendarRangeMode] = useState("span"); // "span" = every day, "endpoints" = start/end only
+    const [calendarRangeMode, setCalendarRangeMode] = useState("endpoints"); // "span" = every day, "endpoints" = start/end only
     const year = parseInt(currentMonth.split("-")[0]);
     const month = parseInt(currentMonth.split("-")[1]) - 1;
     const firstDay = new Date(year, month, 1).getDay();
