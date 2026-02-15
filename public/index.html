@@ -222,12 +222,45 @@ const createEmptyDisciplines = () => Object.keys(TASK_LIBRARY).map(name => ({
   id: uid(), name, color: DEFAULT_DISC_COLORS[name] || "#666", tasks: []
 }));
 
-const OTHER_PHASES = [
-  { name: "Acquisition", icon: "\u{1F3AF}", taskCount: 15, description: "Script evaluation, rights/IP acquisition, deal structuring & packaging." },
-  { name: "Development", icon: "\u270D\uFE0F", taskCount: 20, description: "Screenwriting, creative packaging, financing, legal clearances." },
-  { name: "Pre-Production", icon: "\u{1F4CB}", taskCount: 33, description: "Production design, casting, locations, scheduling, VFX previs, camera, costumes." },
-  { name: "Production", icon: "\u{1F3AC}", taskCount: 26, description: "Direction, cinematography, sound, art dept, production management, stunts." },
-  { name: "Post-Production", icon: "\u{1F39E}\uFE0F", taskCount: 27, description: "Picture editing, VFX, sound design & mixing, music & score, color grading." }
+const REFERENCE_WORKFLOWS = [
+  { name: "Distribution & Sales", icon: "\u{1F4E6}", color: "#0369a1", milestones: [
+    "Domestic distribution deal / output commitment",
+    "International territory pre-sales & MG negotiations",
+    "Theater count targets & screen commitments",
+    "Release pattern decision (wide, platform, day-and-date)",
+    "Print / DCP mastering & delivery",
+    "Exhibitor relations & marketing co-op",
+    "Second-window holdback dates (PVOD, SVOD, AVOD, Free TV)",
+    "Home entertainment street date & retail strategy"
+  ]},
+  { name: "Finance & Business Affairs", icon: "\u{1F4B0}", color: "#059669", milestones: [
+    "P&A budget approval & funding source",
+    "Cash-flow waterfall & recoupment schedule",
+    "Talent participation & backend deal tracking",
+    "Music sync & master-use license payments",
+    "Residual & guild payment obligations (SAG, DGA, WGA)",
+    "Insurance certificates (E&O, general liability)",
+    "Tax incentive filings & rebate collection",
+    "Final cost reconciliation & audit close"
+  ]},
+  { name: "Legal & Compliance", icon: "\u2696\uFE0F", color: "#7c3aed", milestones: [
+    "Chain-of-title verification & copyright registration",
+    "Talent / likeness / name rights clearances",
+    "MPAA / MPA rating submission & appeals",
+    "Accessibility compliance (closed captions, audio description)",
+    "Advertising substantiation & FTC compliance",
+    "International censorship & ratings board submissions",
+    "Promotional sweepstakes / contest legal review",
+    "Clip licensing & fair-use clearances"
+  ]},
+  { name: "Production Pipeline", icon: "\u{1F3AC}", color: "#ea580c", milestones: [
+    "Screenplay locked (shooting draft)",
+    "Principal photography start & wrap dates",
+    "Picture lock & final cut delivery",
+    "VFX delivery milestones",
+    "Sound mix & color grading final",
+    "Deliverables package (DCP, HDR, Dolby Atmos)"
+  ]}
 ];
 
 /* ── ICONS ────────────────────────────────────────────────── */
@@ -774,22 +807,34 @@ function App() {
           </button>
         )}
 
-        {/* Other Phases Reference */}
+        {/* Reference: Non-Marketing Pipeline Stages */}
         {!hasActiveFilter && (
-          <div style={{marginTop:16}}>
-            <button onClick={()=>setShowOther(!showOther)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,color:"#888"}}>
-              <ChevDown open={showOther} s={14} /> Other Pipeline Phases (Reference)
+          <div style={{marginTop:20,background:"#f8fafc",borderRadius:10,border:"1px solid #e2e8f0",overflow:"hidden"}}>
+            <button onClick={()=>setShowOther(!showOther)} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"14px 18px",background:"none",border:"none",cursor:"pointer",textAlign:"left"}}>
+              <span style={{fontSize:15,lineHeight:1}}>&#128218;</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#475569"}}>Reference: Non-Marketing Pipeline Stages</div>
+                <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>Distribution, Finance, Legal & Production milestones (read-only)</div>
+              </div>
+              <ChevDown open={showOther} s={14} />
             </button>
             {showOther && (
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginTop:8}}>
-                {OTHER_PHASES.map(p => (
-                  <div key={p.name} style={{background:"#fff",borderRadius:8,padding:"14px 16px",border:"1px solid #e5e7eb"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                      <span style={{fontSize:20}}>{p.icon}</span>
-                      <span style={{fontSize:14,fontWeight:600,color:"#1a1a2e"}}>{p.name}</span>
-                      <span style={{fontSize:11,color:"#999",marginLeft:"auto"}}>{p.taskCount} tasks</span>
+              <div style={{padding:"0 18px 18px",display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(260px,1fr))",gap:12}}>
+                {REFERENCE_WORKFLOWS.map(wf => (
+                  <div key={wf.name} style={{background:"#fff",borderRadius:8,border:"1px solid #e5e7eb",overflow:"hidden"}}>
+                    <div style={{padding:"10px 14px",borderBottom:"1px solid #f0f0f0",display:"flex",alignItems:"center",gap:8,borderLeft:`4px solid ${wf.color}`}}>
+                      <span style={{fontSize:16}}>{wf.icon}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:"#1a1a2e"}}>{wf.name}</span>
+                      <span style={{fontSize:10,color:"#94a3b8",marginLeft:"auto",background:"#f1f5f9",padding:"2px 6px",borderRadius:8}}>{wf.milestones.length} items</span>
                     </div>
-                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>{p.description}</div>
+                    <div style={{padding:"8px 14px 10px"}}>
+                      {wf.milestones.map((m, i) => (
+                        <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,padding:"4px 0",borderBottom:i < wf.milestones.length - 1 ? "1px solid #f8fafc" : "none"}}>
+                          <div style={{width:5,height:5,borderRadius:"50%",background:wf.color+"66",flexShrink:0,marginTop:5}} />
+                          <span style={{fontSize:11,color:"#555",lineHeight:1.5}}>{m}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
