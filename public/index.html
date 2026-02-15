@@ -1310,9 +1310,13 @@ function App() {
         cur = nd.getFullYear() + "-" + String(nd.getMonth()+1).padStart(2,"0");
       }
     }
+    const printRangeMode = calendarRangeMode || "span";
     const getCalTasks = (yr, mo, day) => {
       const dateStr = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-      return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+      if (printRangeMode === "endpoints") {
+        return allTasks.filter(t => t.startDate && t.endDate && (t.startDate === dateStr || t.endDate === dateStr)).map(t => ({...t, _dayType: t.startDate === dateStr && t.endDate === dateStr ? "single" : t.startDate === dateStr ? "start" : "end"}));
+      }
+      return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate).map(t => ({...t, _dayType: t.startDate === dateStr ? "start" : t.endDate === dateStr ? "end" : "mid"}));
     };
     return (
       <div className="print-landscape" style={{background:"#fff",padding:0}}>
@@ -1333,7 +1337,8 @@ function App() {
                 <div style={{fontSize:10,fontWeight:isRelease?800:600,color:isRelease?"#ef4444":"#333",marginBottom:2}}>{day}{isRelease ? " \u{1F3AC}" : ""}</div>
                 {tasks.slice(0,5).map(t => {
                   const pc = t.disciplineColor || campaignColor;
-                  return <div key={t.id} style={{fontSize:7,padding:"1px 3px",marginBottom:1,borderRadius:2,background:pc+"18",color:pc,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pc}`,lineHeight:"1.3"}}>{t.title}</div>;
+                  const tag = printRangeMode === "endpoints" ? (t._dayType === "start" ? "\u25B6 " : t._dayType === "end" ? "\u25C0 " : "\u25C6 ") : "";
+                  return <div key={t.id} style={{fontSize:7,padding:"1px 3px",marginBottom:1,borderRadius:2,background:pc+"18",color:pc,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pc}`,lineHeight:"1.3"}}>{tag}{t.title}</div>;
                 })}
                 {tasks.length > 5 && <div style={{fontSize:7,color:"#999",fontWeight:600}}>+{tasks.length-5} more</div>}
               </td>
@@ -1353,15 +1358,15 @@ function App() {
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:8,borderBottom:`3px solid ${campaignColor}`}}>
                 <div>
                   <div style={{fontSize:22,fontWeight:800,color:"#1a1a2e"}}>{moLabel}</div>
-                  <div style={{fontSize:11,color:"#666",marginTop:2}}>{projectName} &mdash; Campaign Calendar</div>
+                  <div style={{fontSize:11,color:"#666",marginTop:2}}>{projectName} &mdash; Campaign Calendar{printRangeMode === "endpoints" ? " (Start/End Dates Only)" : ""}</div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
                   <div style={{width:10,height:10,borderRadius:"50%",background:campaignColor}} />
                   <div style={{fontSize:10,color:"#888"}}>Page {mIdx+1} of {months.length}</div>
                 </div>
               </div>
-              {/* Discipline color legend */}
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+              {/* Legends */}
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:printRangeMode==="endpoints"?4:8,alignItems:"center"}}>
                 {disciplines.filter(d=>d.tasks.length>0).map(d=>(
                   <div key={d.id} style={{display:"flex",alignItems:"center",gap:4,fontSize:8}}>
                     <div style={{width:8,height:8,borderRadius:2,background:d.color}} />
@@ -1369,6 +1374,13 @@ function App() {
                   </div>
                 ))}
               </div>
+              {printRangeMode === "endpoints" && (
+                <div style={{display:"flex",gap:12,marginBottom:8,fontSize:8,color:"#888"}}>
+                  <span>{"\u25B6"} = Start Date</span>
+                  <span>{"\u25C0"} = End Date</span>
+                  <span>{"\u25C6"} = Single Day</span>
+                </div>
+              )}
               {/* Calendar table */}
               <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
                 <thead>
