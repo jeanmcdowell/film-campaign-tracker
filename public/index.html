@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Film Marketing & Distribution Pipeline</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { height: 100%; width: 100%; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a2e; background: #f5f5f7; }
+  button, input, select, textarea { font-family: inherit; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 3px; }
+  input[type="date"] { padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; }
+  select { padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; background: #fff; }
+
+  @media print {
+    body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .print-break { page-break-before: always; }
+    #root > div { display: block !important; height: auto !important; overflow: visible !important; }
+    .sidebar-container { display: none !important; }
+    .main-scroll { overflow: visible !important; height: auto !important; }
+    .gantt-scroll { overflow: visible !important; }
+    .print-header { display: flex !important; align-items: center; gap: 16px; padding: 24px 0; border-bottom: 3px solid #1a1a2e; margin-bottom: 24px; }
+    .print-header h1 { font-size: 28px; }
+    .print-header p { color: #666; font-size: 14px; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyBeBSfZD1sqmj9h090IArB71AUrsiPsXSE",
+  authDomain: "film-campaign-tracker---jfm.firebaseapp.com",
+  projectId: "film-campaign-tracker---jfm",
+  storageBucket: "film-campaign-tracker---jfm.firebasestorage.app",
+  messagingSenderId: "252133110788",
+  appId: "1:252133110788:web:d40696404f7a57e57ab151"
+});
+const fbAuth = firebase.auth();
+const fbDb = firebase.firestore();
+</script>
+<script type="text/babel">
+const { useState, useMemo, useRef, useEffect, useCallback } = React;
+
+/* ── helpers ─────────────────────────────────────────────── */
+const fmt = d => { if (!d) return ""; const dt = new Date(d + "T00:00:00"); return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); };
+const addDays = (d, n) => { const dt = new Date(d + "T00:00:00"); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0, 10); };
+const daysBetween = (a, b) => { if (!a || !b) return 0; return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); };
+const monthsBetween = (a, b) => { const da = new Date(a + "T00:00:00"), db = new Date(b + "T00:00:00"); return (db.getFullYear() - da.getFullYear()) * 12 + db.getMonth() - da.getMonth() + 1; };
+const getMonthStart = d => d.slice(0, 7) + "-01";
+const monthLabel = d => { const dt = new Date(d + "T00:00:00"); return dt.toLocaleDateString("en-US", { month: "short", year: "numeric" }); };
+const uid = () => Math.random().toString(36).slice(2, 9);
+const STATUS_COLORS = { "not-started": "#94a3b8", "in-progress": "#3b82f6", "complete": "#10b981", "blocked": "#ef4444" };
+const STATUS_LABELS = { "not-started": "Not Started", "in-progress": "In Progress", "complete": "Complete", "blocked": "Blocked" };
+
+/* ── M&D data ────────────────────────────────────────────── */
+const MD_DISCIPLINES = [
+  {
+    id: uid(), name: "Marketing Strategy & Planning", color: "#7c3aed",
+    roles: ["Head of Marketing", "Campaign Manager", "Producer", "Director"],
+    tasks: [
+      { id: uid(), title: "Initial Filmmaker Meeting", description: "Formal sit-down between the marketing team and the filmmaker (director, producers) to understand the creative vision, intended audience, comparable titles, and any sensitivities. Establishes the collaborative relationship that will shape all marketing decisions.", durationWeeks: 1, roles: ["Head of Marketing", "Campaign Manager", "Director", "Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Market Positioning & Target Audience Definition", description: "Define competitive positioning, core selling proposition, and emotional hooks. Segment audiences by demographics, psychographics, and media consumption. Create detailed audience personas for each target quadrant.", durationWeeks: 6, roles: ["Head of Marketing", "Market Research", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Competitive Release Landscape Analysis", description: "Map competing releases across the calendar: same genre, same demographic, tentpole blockbusters, and counter-programming opportunities. Identify the optimal corridor for the film's release.", durationWeeks: 3, roles: ["Campaign Manager", "Distribution", "Market Research"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Campaign Strategy Deck & Presentation", description: "Compile positioning, audience research, competitive analysis, and recommended marketing approach into a comprehensive strategy deck. Present to studio leadership, producers, and filmmaker for alignment.", durationWeeks: 3, roles: ["Head of Marketing", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Ongoing Filmmaker Check-Ins", description: "Regularly scheduled touchpoints with the filmmaker to review creative materials (trailers, key art, TV spots), present research findings, and maintain alignment on tone and messaging throughout the campaign.", durationWeeks: 24, roles: ["Head of Marketing", "Campaign Manager", "Director", "Producer"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Marketing Budget & Operations", color: "#475569",
+    roles: ["Head of Marketing", "Marketing Finance", "Campaign Manager"],
+    tasks: [
+      { id: uid(), title: "Preliminary P&A Budget Development", description: "Develop initial print & advertising (P&A) budget framework based on the film's projected performance, comparable titles, and distribution strategy. Allocate across media, creative, PR, digital, partnerships, and operations.", durationWeeks: 4, roles: ["Head of Marketing", "Marketing Finance", "Distribution"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Budget Finalization & Approval", description: "Lock the final P&A budget after all department inputs, media bids, and creative cost estimates are received. Secure executive approval. Establish spending authority and approval workflows.", durationWeeks: 2, roles: ["Head of Marketing", "Marketing Finance", "Studio Executive"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Monthly Budget Tracking & Variance Reporting", description: "Track actual spend vs. budget across all line items on a weekly/monthly basis. Flag variances, manage reallocation requests, and produce spending reports for leadership review.", durationWeeks: 24, roles: ["Marketing Finance", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Final Budget Reconciliation", description: "Post-release reconciliation of all P&A spending. Close out vendor invoices, reconcile media actuals vs. estimates, and produce the final campaign cost report for accounting and profit participation calculations.", durationWeeks: 4, roles: ["Marketing Finance", "Accounting"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Materials & Asset Management", description: "Centralized tracking and distribution of all creative assets (trailers, TV spots, key art, stills, EPK, digital assets) across departments, territories, and partners. Maintain version control and access permissions.", durationWeeks: 20, roles: ["Campaign Manager", "Asset Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Creative Advertising: Trailers", color: "#b91c1c",
+    roles: ["Trailer House", "Head of Marketing", "Director", "Music Supervisor"],
+    tasks: [
+      { id: uid(), title: "Teaser Trailer Production", description: "Craft the initial teaser trailer (60\u201390 sec) to establish tone, intrigue, and brand identity without revealing major plot points. Often the first piece of footage the public sees. Multiple concepts may be produced for testing.", durationWeeks: 6, roles: ["Trailer Editor", "Trailer House", "Head of Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Theatrical Trailer Production", description: "Produce the primary theatrical trailer (2:00\u20132:30). The single most important marketing asset. Multiple rounds of notes with filmmaker. Must serve as the foundation for all subsequent TV and digital creative.", durationWeeks: 8, roles: ["Trailer Editor", "Trailer House", "Head of Marketing", "Director"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "International Trailer Versioning", description: "Adapt the domestic trailer for international markets: alternate footage for cultural sensitivities, re-edited for local ratings boards, textless backgrounds for localized title cards, and territory-specific music cues.", durationWeeks: 4, roles: ["Trailer House", "International Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Trailer Music Licensing & Composition", description: "License or commission custom music for trailers. Negotiate synchronization rights for pre-existing tracks or hire a trailer music composer. Each trailer version may require different music clearances.", durationWeeks: 6, roles: ["Music Supervisor", "Trailer House", "Business Affairs"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Filmmaker Trailer Approval Process", description: "Formal review and approval cycles with the director/producer per contractual creative approval rights. Managing notes, scheduling screenings of cuts, and navigating creative differences between marketing and filmmaking perspectives.", durationWeeks: 4, roles: ["Head of Marketing", "Director", "Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Teaser Trailer Debut & Distribution", description: "Plan and execute the public debut of the teaser trailer: exclusive platform premiere (YouTube, social, or attached to a specific theatrical release), coordinated PR push, social media rollout, paid amplification, and tracking of view counts and engagement metrics across all platforms.", durationWeeks: 2, roles: ["Head of Marketing", "Digital Marketing Manager", "PR Agency", "Social Media Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Trailer Performance Targets & Analytics", description: "Set and track quantitative targets for each trailer release: 24-hour view count goals, 7-day benchmarks, like/dislike ratios, social conversation volume, earned media impressions, and sentiment analysis. Compare performance against genre comps and adjust paid amplification strategy based on organic momentum.", durationWeeks: 4, roles: ["Digital Marketing Manager", "Market Research", "Campaign Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Creative Advertising: TV Spots & Digital", color: "#dc2626",
+    roles: ["Trailer House", "Creative Agency", "Media Planner", "Music Supervisor"],
+    tasks: [
+      { id: uid(), title: "TV Spot Production: :60 Spots", description: "Produce 60-second TV spots derived from trailer footage. These longer-form broadcast spots typically run in premium placement (primetime, event programming, sports). Multiple concepts targeting different audience segments.", durationWeeks: 3, roles: ["Trailer Editor", "Creative Agency", "Head of Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "TV Spot Production: :30 Spots", description: "Produce 30-second TV spots \u2014 the workhorse of broadcast advertising. Create multiple versions targeting different demographics, dayparts, and networks. Each must tell a compelling micro-story in half a minute.", durationWeeks: 3, roles: ["Trailer Editor", "Creative Agency", "Media Planner"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "TV Spot Production: :15 Spots", description: "Produce 15-second TV spots for high-frequency rotation, digital pre-roll, and late-campaign urgency messaging. Distill the selling proposition to its most essential visual and emotional beats.", durationWeeks: 2, roles: ["Trailer Editor", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Digital-First Video Creative", description: "Produce video assets natively designed for digital platforms: 6-second bumpers, vertical video for TikTok/Reels/Shorts, interactive end-cards, and skippable vs. non-skippable pre-roll variants.", durationWeeks: 4, roles: ["Creative Agency", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "TV & Spot Music Licensing", description: "Secure synchronization and master use licenses for all music used in TV spots and digital video creative. Negotiate rates per medium (broadcast, digital, cinema), territory, and term. Budget and clear alternatives.", durationWeeks: 6, roles: ["Music Supervisor", "Business Affairs", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Broadcast Standards & Ratings Clearance", description: "Submit all TV spots to broadcast standards departments and MPAA for ratings band approval. Ensure all spots carry the correct rating tag and comply with network content policies. Manage re-edits if spots are rejected.", durationWeeks: 2, roles: ["Campaign Manager", "Creative Agency"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Key Art & Visual Identity", color: "#9333ea",
+    roles: ["Key Art Designer", "Photographer", "Creative Agency", "Head of Marketing"],
+    tasks: [
+      { id: uid(), title: "Talent Photo Shoot", description: "Coordinate and execute a dedicated photo shoot with the film's cast for key art, press materials, and marketing assets. Requires talent availability, wardrobe, hair/makeup, set design, and a top photographer.", durationWeeks: 2, roles: ["Key Art Designer", "Photographer", "Publicity", "Talent Reps"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Teaser One-Sheet Design", description: "Design the initial teaser poster that establishes the film's visual marketing identity. Typically image-driven with minimal text, focused on intrigue and tone. Often released at first public announcement.", durationWeeks: 4, roles: ["Key Art Designer", "Creative Agency", "Head of Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Final One-Sheet (Payoff Poster)", description: "Design the primary theatrical one-sheet: the definitive poster that appears in theaters, online, and in all print advertising. Must satisfy contractual billing obligations and work at every scale from billboard to thumbnail.", durationWeeks: 6, roles: ["Key Art Designer", "Creative Agency", "Head of Marketing", "Business Affairs"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Character Posters & Series", description: "Design individual character posters or a themed poster series for ensemble casts. Used for social media reveals, theatrical displays, and collectible appeal.", durationWeeks: 4, roles: ["Key Art Designer", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Outdoor & Transit Creative Adaptation", description: "Adapt key art for large-format outdoor placements: billboards, bus shelters, subway cards, wallscapes, and building wraps. Each format has unique dimensions, viewing distances, and readability requirements.", durationWeeks: 3, roles: ["Key Art Designer", "Creative Agency", "Media Planner"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Digital Display & Banner Creative", description: "Produce the full suite of digital display ads in all standard IAB sizes (300x250, 728x90, 160x600, 320x50, etc.) plus rich media and animated HTML5 units. Create multiple concepts for A/B testing.", durationWeeks: 3, roles: ["Creative Agency", "Digital Marketing Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Research, Tracking & Materials Testing", color: "#0891b2",
+    roles: ["Market Research", "Head of Marketing", "Campaign Manager"],
+    tasks: [
+      { id: uid(), title: "Baseline Awareness & Interest Study", description: "Conduct initial quantitative research to establish baseline awareness, unaided recall, and interest levels for the film's concept, talent, and genre among target audiences before any marketing begins.", durationWeeks: 3, roles: ["Market Research", "Research Vendor"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Trailer Testing (Quantitative)", description: "Test trailer(s) with recruited audiences via online surveys or in-theater intercepts. Measure purchase intent, emotional response, genre appeal, confusion points, and comparative performance against benchmarks.", durationWeeks: 3, roles: ["Market Research", "Research Vendor", "Head of Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "TV Spot Testing", description: "Test :30 and :60 TV spots for message clarity, persuasion, likability, and purchase intent. Compare performance across demographic segments. Identify the strongest-performing spots for heavy rotation.", durationWeeks: 2, roles: ["Market Research", "Research Vendor", "Media Planner"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Key Art / Poster Testing", description: "Test one-sheet concepts with target audiences to evaluate visual appeal, genre communication, star recognition, and purchase intent. Results determine which poster moves to final production.", durationWeeks: 2, roles: ["Market Research", "Research Vendor", "Key Art Designer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Ongoing Tracking Studies", description: "Weekly or bi-weekly tracking surveys measuring unaided awareness, total awareness, first choice, definite interest, and purchase intent. Tracking typically begins 10\u201312 weeks before release via services like NRG, Quorum, or Comscore.", durationWeeks: 12, roles: ["Market Research", "Research Vendor", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Competitive Tracking & Share of Voice", description: "Monitor competitors' marketing activity: trailer drops, social media engagement, media spend estimates, outdoor presence, and tracking numbers. Report weekly on competitive share of voice.", durationWeeks: 12, roles: ["Market Research", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Test Screening Audience Research", description: "Conduct recruited audience test screenings with detailed exit surveys and focus groups. Measure overall satisfaction, specific scene reactions, ending satisfaction, and recommendation intent. Results inform both re-editing and marketing messaging.", durationWeeks: 6, roles: ["Market Research", "Research Vendor", "Producer", "Editor"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Opening Weekend Exit Polling", description: "Deploy exit surveys (PostTrak, CinemaScore) at theaters on opening weekend to capture audience demographics, satisfaction scores, recommendation intent, and how they heard about the film. Data informs holdover strategy.", durationWeeks: 1, roles: ["Market Research", "Distribution Analyst"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Paid Media & Media Planning", color: "#0369a1",
+    roles: ["Media Planner", "Media Buyer", "Head of Marketing", "Campaign Manager"],
+    tasks: [
+      { id: uid(), title: "Media Strategy & Channel Planning", description: "Develop the overarching media strategy: channel mix (TV, digital, outdoor, cinema, radio, print), flighting schedule, reach/frequency targets, and budget allocation by channel. Present to marketing leadership for approval.", durationWeeks: 4, roles: ["Media Planner", "Head of Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "National TV Buy (Broadcast & Cable)", description: "Negotiate and execute the national television advertising buy across broadcast networks, cable channels, and connected TV platforms. Secure premium placements (primetime, live sports, event programming). Manage scatter market and upfront inventory.", durationWeeks: 8, roles: ["Media Buyer", "Media Planner"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Digital & Programmatic Media Buy", description: "Execute the digital advertising buy across programmatic display, paid search (SEM), online video (OLV/pre-roll), native advertising, and connected TV (CTV/OTT). Set up audience targeting, retargeting, and frequency management.", durationWeeks: 8, roles: ["Media Buyer", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Outdoor & Out-of-Home (OOH) Buy", description: "Secure outdoor advertising placements: billboards, bus shelters, transit wraps, subway dominations, wallscapes, and digital spectaculars. Focus on top markets matching the film's target demo and theatrical footprint.", durationWeeks: 6, roles: ["Media Buyer", "Media Planner"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Cinema Advertising Buy", description: "Book in-theater advertising: pre-show trailer placements, lobby displays, concession promotions, and branded experiences in premium formats. Coordinate with NCM, Screenvision, and independent circuits.", durationWeeks: 4, roles: ["Media Buyer", "Exhibition Relations"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Radio Buy & Audio Advertising", description: "Execute radio advertising across terrestrial, satellite (SiriusXM), and streaming audio platforms (Spotify, Pandora, podcasts). Produce radio spots and host-read integrations for targeted formats and markets.", durationWeeks: 4, roles: ["Media Buyer", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Paid Social Media Advertising", description: "Execute paid campaigns across Meta (Instagram/Facebook), TikTok, X, YouTube, Snapchat, and Reddit. Manage audience targeting, creative rotation, A/B testing, and real-time optimization against engagement and conversion KPIs.", durationWeeks: 8, roles: ["Digital Marketing Manager", "Media Buyer", "Social Media Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Final Media Plan Lock & Flowchart", description: "Finalize the comprehensive media plan flowchart showing all placements, flighting dates, budgets, and creative assignments across every channel. Circulate for final approval before execution begins.", durationWeeks: 2, roles: ["Media Planner", "Head of Marketing", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Paid Media Flight Execution & Optimization", description: "Execute the live media flight across all channels per the approved flowchart. Monitor daily delivery, impressions, reach, frequency, and pacing. Optimize in real-time: shift budgets between channels, swap underperforming creative, adjust targeting, and manage make-goods for under-delivery.", durationWeeks: 8, roles: ["Media Buyer", "Media Planner", "Digital Marketing Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "National PR, Publicity & Press", color: "#e11d48",
+    roles: ["Unit Publicist", "PR Agency", "Publicity Department", "Awards Strategist"],
+    tasks: [
+      { id: uid(), title: "EPK (Electronic Press Kit) Production", description: "Produce the comprehensive EPK: BTS footage, cast/crew interviews, b-roll packages, hi-res production stills, bios, production notes, and clip reels. Distributed to all media outlets worldwide.", durationWeeks: 12, roles: ["Unit Publicist", "EPK Producer", "Still Photographer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Long-Lead Press Campaign", description: "Place exclusive stories in monthly magazines and feature outlets (Vanity Fair, Entertainment Weekly, Empire) 3\u20136 months before release. Coordinate set visits, talent profiles, and first-look reveals.", durationWeeks: 8, roles: ["Publicity Department", "PR Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Short-Lead Press & Online Blitz", description: "Coordinate the final wave of press coverage 2\u20134 weeks before release: online exclusives, daily entertainment shows, talk show appearances, podcast interviews, and social media takeovers.", durationWeeks: 4, roles: ["Publicity Department", "PR Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Press Junket Planning & Execution", description: "Organize full press junkets: domestic roundtables, international press days, one-on-one interviews with key talent. Coordinate talent schedules, interview setups, press kits, and media logistics.", durationWeeks: 3, roles: ["Publicity Department", "Talent Reps", "PR Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Premiere Event Planning & Execution", description: "Produce the world premiere: red carpet, step-and-repeat, press line, 400\u20131200 seat screening, and after-party. Manage invitations (press, talent, industry, influencers), talent arrivals, media coverage.", durationWeeks: 6, roles: ["Events Team", "PR Agency", "Publicity Department"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Review Embargo & Critics Screenings", description: "Schedule advance critic screenings (press screenings, link-based screeners) and set the review embargo strategy. Time the lift for maximum positive momentum: early for strong titles, closer for uncertain ones.", durationWeeks: 3, roles: ["Publicity Department", "Distribution"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Awards Campaign Strategy & Execution", description: "If applicable: plan guild screenings, FYC mailings, trade advertising (Variety, THR, Deadline), Q&A events, and targeted outreach to Academy/guild voters. Coordinate awards consultants.", durationWeeks: 16, roles: ["Awards Strategist", "PR Agency", "Publicity"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Exclusive Clip Releases & EPK Distribution", description: "Strategically release exclusive film clips to targeted media outlets, entertainment shows, and digital platforms throughout the campaign. Coordinate EPK distribution to all press contacts worldwide, managing exclusivity windows and embargo timing for maximum coverage.", durationWeeks: 6, roles: ["Publicity Department", "PR Agency", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Press Day Coordination & Execution", description: "Organize a dedicated press day: talent available for a full day of back-to-back interviews with print, online, TV, and radio journalists. Coordinate interview schedules, press kits, talent prep, hair/makeup, photo ops, and venue logistics.", durationWeeks: 2, roles: ["Publicity Department", "PR Agency", "Talent Reps"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Regional PR & Field Marketing", color: "#f43f5e",
+    roles: ["Regional PR Coordinator", "Field Marketing Manager", "Local Media"],
+    tasks: [
+      { id: uid(), title: "Regional Publicity Plan & Market Selection", description: "Identify priority local markets based on box office potential, demographic concentrations, and competitive landscape. Develop a market-by-market PR strategy with local media targets and event opportunities.", durationWeeks: 4, roles: ["Regional PR Coordinator", "Campaign Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Local Media Outreach & Interviews", description: "Pitch and coordinate local TV morning shows, radio drive-time interviews, newspaper features, and regional digital outlets in top markets. Arrange talent call-in interviews or satellite media tours for broader reach.", durationWeeks: 6, roles: ["Regional PR Coordinator", "Talent Reps"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Grassroots Screening Program", description: "Organize advance screenings in targeted markets for community groups, cultural organizations, faith-based audiences, military, universities, or affinity groups aligned with the film's themes. Seed word-of-mouth.", durationWeeks: 4, roles: ["Field Marketing Manager", "Regional PR Coordinator"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Regional Promotional Events", description: "Execute local-market promotional events: pop-ups, photo ops, mall activations, campus visits, and community partnerships. Drive local buzz and earned media in key theatrical markets.", durationWeeks: 4, roles: ["Field Marketing Manager", "Events Team"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Satellite Media Tour (SMT)", description: "Produce a satellite media tour where talent conducts back-to-back live interviews with local TV stations across dozens of markets in a single day. Extremely efficient way to generate local coverage nationwide.", durationWeeks: 1, roles: ["Regional PR Coordinator", "PR Agency", "Talent Reps"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Digital & Social Media", color: "#0ea5e9",
+    roles: ["Digital Marketing Manager", "Social Media Manager", "Content Creator", "Web Developer"],
+    tasks: [
+      { id: uid(), title: "Launch Official Social Media Profiles", description: "Create and launch the film's official accounts across all relevant platforms (Instagram, TikTok, X, Facebook, YouTube, Threads). Establish the visual identity, bio, profile imagery, and initial content cadence.", durationWeeks: 2, roles: ["Social Media Manager", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Social Media Content Calendar & Organic Campaign", description: "Develop and execute a multi-month content calendar: reveal cadence, countdown posts, behind-the-scenes, cast takeovers, fan engagement prompts, clip drops, and real-time cultural moment tie-ins.", durationWeeks: 24, roles: ["Social Media Manager", "Content Creator"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Official Film Website Build & Launch", description: "Design and develop the dedicated film website: trailer embed, synopsis, cast/crew bios, image gallery, ticketing integration (Fandango, Atom), and SEO optimization. Must be mobile-first and ADA compliant.", durationWeeks: 6, roles: ["Web Developer", "Digital Marketing Manager", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Update Corporate / Studio Website", description: "Update the production company or studio's corporate website with the new film: add to the slate/filmography page, upload press materials, update the homepage hero, and ensure all links to the film site are live.", durationWeeks: 1, roles: ["Web Developer", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Influencer & Creator Partnerships", description: "Identify and partner with influencers and content creators whose audiences align with the film's demo. Coordinate sponsored posts, early screenings, reaction content, and authentic engagement campaigns.", durationWeeks: 6, roles: ["Digital Marketing Manager", "Influencer Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Email Marketing & CRM Sequences", description: "Build and segment email lists from social engagement, website sign-ups, and partner databases. Produce email sequences: awareness, trailer drop, ticket pre-sale, opening weekend urgency, and post-release engagement.", durationWeeks: 8, roles: ["Email Marketing Specialist", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Social Activations & Tentpole Moments", description: "Plan and execute high-impact social media activations tied to key campaign moments: trailer drops, poster reveals, ticket on-sale dates, cast announcements, and cultural tentpoles. Includes live events, countdowns, fan challenges, AR filters, and real-time engagement campaigns.", durationWeeks: 12, roles: ["Social Media Manager", "Content Creator", "Digital Marketing Manager"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Official Website Launch & Ticketing Integration", description: "Coordinate the public launch of the film's official website timed to a major campaign beat (teaser trailer, first poster). Activate ticketing widgets (Fandango, Atom Tickets), enable email capture, push SEO live, and drive traffic via paid and organic channels. Monitor analytics from day one.", durationWeeks: 2, roles: ["Web Developer", "Digital Marketing Manager", "Campaign Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Promotional Partnerships, Stunts & Activations", color: "#d946ef",
+    roles: ["Promotions Department", "Events Team", "Brand Partners", "Experiential Agency"],
+    tasks: [
+      { id: uid(), title: "Brand Partnership Development", description: "Identify and negotiate cross-promotional deals with consumer brands (QSR, beverage, retail, tech, automotive). Structure co-branded products, sweepstakes, media value exchanges, and retail point-of-sale campaigns.", durationWeeks: 12, roles: ["Promotions Department", "Brand Partners", "Licensing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Experiential Activations & Immersive Events", description: "Design and produce large-scale experiential marketing activations: pop-up installations, immersive themed environments, interactive fan experiences at conventions (Comic-Con, CinemaCon) and high-traffic locations.", durationWeeks: 8, roles: ["Experiential Agency", "Events Team", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Publicity Stunts & Guerrilla Marketing", description: "Conceive and execute attention-grabbing publicity stunts designed to generate earned media coverage and social virality. Flash mobs, themed takeovers of public spaces, surprise screenings, or spectacle events tied to the film's world.", durationWeeks: 4, roles: ["PR Agency", "Events Team", "Experiential Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Promotional Merchandise & Giveaways", description: "Design and produce promotional merchandise: branded swag for press, influencer kits, fan giveaways, and retailer exclusives. Coordinate production timelines, shipping, and distribution logistics.", durationWeeks: 6, roles: ["Promotions Department", "Licensing", "Creative Agency"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Convention & Industry Event Presence", description: "Plan and execute the film's presence at key industry events: CinemaCon presentation, Comic-Con panels/activations, SXSW screenings, or other genre-appropriate conventions. Coordinate talent, panels, exclusive footage reveals.", durationWeeks: 4, roles: ["Campaign Manager", "Publicity", "Events Team"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Retail & In-Store Partnerships", description: "Negotiate retail partnerships for in-store displays, endcap takeovers, co-branded packaging, exclusive content, and point-of-sale promotion. Key partners: Walmart, Target, Best Buy, specialty retailers.", durationWeeks: 8, roles: ["Promotions Department", "Retail Partners", "Home Entertainment"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Festival Strategy", color: "#f59e0b",
+    roles: ["Festival Strategist", "Producer", "Sales Agent", "Publicity"],
+    tasks: [
+      { id: uid(), title: "Festival Selection & Submission", description: "Determine optimal festival fit by genre, prestige, market timing, and distribution strategy. Cannes, Venice, Toronto, Sundance, Berlin, Tribeca each offer distinct strategic advantages for different types of films.", durationWeeks: 8, roles: ["Festival Strategist", "Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Festival Premiere Logistics & Execution", description: "Coordinate DCP delivery, technical checks, talent travel/accommodations, press day scheduling, party planning, and managing the high-pressure premiere environment.", durationWeeks: 6, roles: ["Festival Strategist", "Producer", "Publicity"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Market Screenings & Buyer Meetings", description: "Organize market screenings for potential buyers and schedule meetings with territory distributors at festival markets (Cannes Marche, AFM, EFM, Toronto). The festival market is where many acquisition deals begin.", durationWeeks: 2, roles: ["Sales Agent", "Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Festival Press & Social Coverage", description: "Manage press coverage during the festival: red carpet, press conference, talent interviews, social media live coverage, real-time reaction monitoring, and rapid-response messaging.", durationWeeks: 2, roles: ["Publicity Department", "Social Media Manager"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Sales & Distribution", color: "#059669",
+    roles: ["Sales Agent", "Distribution Executive", "Entertainment Attorney"],
+    tasks: [
+      { id: uid(), title: "Domestic Distribution Deal", description: "Negotiate the domestic distribution agreement: minimum guarantee (MG), P&A commitment, release pattern (wide/platform/limited), marketing plan approval, and holdback windows.", durationWeeks: 12, roles: ["Sales Agent", "Producer", "Entertainment Attorney"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "International Territory Sales", description: "Sell distribution rights territory-by-territory to international distributors at film markets and through direct outreach. Negotiate MGs, delivery specs, dubbing/subtitling, and marketing commitments per territory.", durationWeeks: 24, roles: ["Sales Agent", "International Sales Team"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Streaming & SVOD Deals", description: "Negotiate deals with streaming platforms (Netflix, Amazon, Apple TV+, Max, Hulu) for post-theatrical or day-and-date digital. Terms: license fees, exclusivity windows, territories, and duration.", durationWeeks: 12, roles: ["Sales Agent", "Distribution Executive", "Business Affairs"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Delivery Requirements & Technical QC", description: "Meet each distributor's specific delivery specs: video masters (multiple formats/codecs), audio stems (5.1, 7.1, Atmos), subtitle/dubbing materials, marketing elements, legal docs (chain of title, E&O, music cue sheets), and QC reports.", durationWeeks: 6, roles: ["Post Supervisor", "Deliverables Coordinator", "Legal"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Theatrical Release & Exhibition", color: "#ea580c",
+    roles: ["Distribution Executive", "Booker", "Exhibition Relations"],
+    tasks: [
+      { id: uid(), title: "Release Date Selection & Competitive Analysis", description: "Choose the optimal release date analyzing the competitive landscape, holiday timing, audience availability, weather patterns, cultural events, and marketing runway requirements.", durationWeeks: 4, roles: ["Head of Distribution", "Marketing", "Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Theater Booking & Screen Count Negotiation", description: "Negotiate with theater chains (AMC, Regal, Cinemark, Cineplex) and independents for screen count, showtime placement, auditorium quality, and film rental terms (percentage splits declining over weeks).", durationWeeks: 6, roles: ["Booker", "Exhibition Relations"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Premium Format Allocation (IMAX, Dolby, PLF)", description: "Secure bookings in premium format auditoriums: IMAX, Dolby Cinema, ScreenX, 4DX, RPX, and other PLF. Premium screens command higher ticket prices and generate outsized per-screen revenue.", durationWeeks: 8, roles: ["Distribution", "Premium Format Partners"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "DCP Manufacturing & Distribution", description: "Manufacture and ship DCPs (or distribute via satellite/HDD/electronic delivery) to every theater. Manage versioning (2D, 3D, IMAX, Dolby Cinema, 4DX, open caption, descriptive audio) and KDM key management.", durationWeeks: 3, roles: ["Print Distribution", "Technical Operations"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Advance & Preview Screenings", description: "Execute advance and preview screenings to seed word-of-mouth: Thursday previews, fan-first events, promotional partner screenings, military/campus screenings, and exhibitor loyalty screenings.", durationWeeks: 2, roles: ["Marketing", "Distribution", "Field Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Opening Weekend Monitoring & Management", description: "Real-time monitoring: Thursday previews, Friday opening day, Saturday matinees, Sunday. Analyze per-screen averages, geographic performance, demographic skew, CinemaScore/PostTrak exit data.", durationWeeks: 1, roles: ["Distribution Analyst", "Head of Distribution", "Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Hold-Over, Expansion & Contraction Decisions", description: "Weekly Tuesday analysis to determine whether to expand (add screens), hold (maintain), or contract (release screens back). Based on week-over-week drops, per-screen average, and competitive landscape.", durationWeeks: 8, roles: ["Distribution Executive", "Booker", "Theater Chains"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Exhibitor Marketing & Theater-Level Promotion", description: "Coordinate marketing support directly with exhibition partners: lobby standees, poster placement, in-theater digital signage, concession tie-ins, loyalty program features, and co-branded promotions with AMC Stubs, Regal Crown Club, and Cinemark Movie Rewards.", durationWeeks: 6, roles: ["Exhibition Relations", "Marketing", "Promotions Department"], dependencies: [], status: "not-started" }
+    ]
+  },
+  {
+    id: uid(), name: "Post-Theatrical Windows", color: "#6366f1",
+    roles: ["Distribution Executive", "Home Entertainment", "Digital Distribution"],
+    tasks: [
+      { id: uid(), title: "PVOD & EST (Premium Digital)", description: "First post-theatrical window (17\u201345 days after theatrical). Premium video-on-demand rental ($19.99) and electronic sell-through purchase ($24.99) on iTunes, Amazon, Google Play, Vudu, Fandango at Home.", durationWeeks: 3, roles: ["Digital Distribution", "Marketing"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Physical Media (Blu-ray / 4K UHD / Collector's)", description: "Author and produce physical media releases with bonus features (BTS, deleted scenes, commentary, filmmaker intro). Coordinate retail distribution, exclusive retailer editions (SteelBooks, slip covers).", durationWeeks: 8, roles: ["Home Entertainment", "Authoring House", "Bonus Content Producer"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "SVOD & Streaming Window", description: "Film becomes available on subscription streaming per negotiated deals. Window has compressed to 45\u201390 days after theatrical for many titles. Coordinate streaming launch marketing with platform partner.", durationWeeks: 2, roles: ["Digital Distribution", "Streaming Platform"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Catalog Management & Long-Tail Revenue", description: "Long-term management of the film as a catalog asset: TV broadcast licensing (free TV, basic cable, premium), airline/hotel, educational distribution, and ongoing digital platform optimization.", durationWeeks: 52, roles: ["Distribution", "Licensing", "Library Management"], dependencies: [], status: "not-started" },
+      { id: uid(), title: "Financial Reporting & Profit Participation", description: "Prepare and distribute detailed financial statements to all profit participants (producers, talent, financiers, equity partners). Reconcile all revenue streams vs. costs and contractual recoupment waterfall.", durationWeeks: 8, roles: ["Finance", "Accounting", "Business Affairs", "Audit"], dependencies: [], status: "not-started" }
+    ]
+  }
+];
+
+const OTHER_PHASES = [
+  { name: "Acquisition", icon: "\u{1F3AF}", taskCount: 15, description: "Script evaluation, rights/IP acquisition, deal structuring & packaging." },
+  { name: "Development", icon: "\u270D\uFE0F", taskCount: 20, description: "Screenwriting, creative packaging, financing, legal clearances." },
+  { name: "Pre-Production", icon: "\u{1F4CB}", taskCount: 33, description: "Production design, casting, locations, scheduling, VFX previs, camera, costumes." },
+  { name: "Production", icon: "\u{1F3AC}", taskCount: 26, description: "Direction, cinematography, sound, art dept, production management, stunts." },
+  { name: "Post-Production", icon: "\u{1F39E}\uFE0F", taskCount: 27, description: "Picture editing, VFX, sound design & mixing, music & score, color grading." }
+];
+
+/* ── ICONS ────────────────────────────────────────────────── */
+const ChevDown = ({open, s=16}) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none" style={{transform:open?"rotate(180deg)":"rotate(0)",transition:"transform .15s"}}><path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+
+/* ── MAIN APP ─────────────────────────────────────────────── */
+function App() {
+  const [projectName, setProjectName] = useState("Untitled Film");
+  const [releaseDate, setReleaseDate] = useState("2026-10-16");
+  const [disciplines, setDisciplines] = useState(() => MD_DISCIPLINES.map(d => ({
+    ...d,
+    tasks: d.tasks.map((t, i) => {
+      const start = addDays("2026-10-16", -(t.durationWeeks * 7) - (i * 7));
+      return { ...t, startDate: start, endDate: addDays(start, t.durationWeeks * 7) };
+    })
+  })));
+  const [view, setView] = useState("overview"); // overview | gantt | calendar
+  const [selectedDiscipline, setSelectedDiscipline] = useState(null);
+  const [editingTask, setEditingTask] = useState(null);
+  const [printMode, setPrintMode] = useState(null); // null | "overview" | "timeline"
+
+  /* ── Campaign Persistence (Firebase Cloud + localStorage fallback) */
+  const fileInputRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [campaignId, setCampaignId] = useState(null);
+  const [savedCampaigns, setSavedCampaigns] = useState({});
+  const [syncing, setSyncing] = useState(false);
+
+  // Auth state listener
+  useEffect(() => {
+    const unsub = fbAuth.onAuthStateChanged(u => { setUser(u); setAuthLoading(false); });
+    return unsub;
+  }, []);
+
+  // Load campaigns when auth resolves
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      // Fallback: load from localStorage
+      try {
+        const local = JSON.parse(localStorage.getItem('fmp-campaigns') || '{}');
+        setSavedCampaigns(local);
+        const lastId = localStorage.getItem('fmp-current');
+        if (lastId && local[lastId] && local[lastId].disciplines) {
+          const c = local[lastId];
+          setProjectName(c.projectName); setReleaseDate(c.releaseDate); setDisciplines(c.disciplines); setCampaignId(lastId);
+        }
+      } catch {}
+      return;
+    }
+    // Load from Firestore
+    setSyncing(true);
+    fbDb.collection('users').doc(user.uid).collection('campaigns').get().then(snap => {
+      const campaigns = {};
+      snap.forEach(doc => { campaigns[doc.id] = doc.data(); });
+      setSavedCampaigns(campaigns);
+      const lastId = localStorage.getItem('fmp-current');
+      if (lastId && campaigns[lastId] && campaigns[lastId].disciplines) {
+        const c = campaigns[lastId];
+        setProjectName(c.projectName); setReleaseDate(c.releaseDate); setDisciplines(c.disciplines); setCampaignId(lastId);
+      }
+      setSyncing(false);
+    }).catch(() => setSyncing(false));
+  }, [user, authLoading]);
+
+  // Auto-save (debounced)
+  useEffect(() => {
+    if (!campaignId) return;
+    const timer = setTimeout(() => {
+      const data = { projectName, releaseDate, disciplines, savedAt: new Date().toISOString() };
+      // Always save to localStorage as backup
+      try { const local = JSON.parse(localStorage.getItem('fmp-campaigns') || '{}'); local[campaignId] = data; localStorage.setItem('fmp-campaigns', JSON.stringify(local)); } catch {}
+      // Save to Firestore if signed in
+      if (user) {
+        setSyncing(true);
+        fbDb.collection('users').doc(user.uid).collection('campaigns').doc(campaignId)
+          .set(data).then(() => { setSyncing(false); setSavedCampaigns(prev => ({...prev, [campaignId]: data})); }).catch(() => setSyncing(false));
+      } else {
+        setSavedCampaigns(prev => ({...prev, [campaignId]: data}));
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [projectName, releaseDate, disciplines, campaignId, user]);
+
+  const signIn = () => fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+  const doSignOut = () => fbAuth.signOut();
+
+  const saveCampaign = () => {
+    const id = campaignId || uid();
+    const data = { projectName, releaseDate, disciplines, savedAt: new Date().toISOString() };
+    setCampaignId(id); localStorage.setItem('fmp-current', id);
+    setSavedCampaigns(prev => ({...prev, [id]: data}));
+    try { const local = JSON.parse(localStorage.getItem('fmp-campaigns') || '{}'); local[id] = data; localStorage.setItem('fmp-campaigns', JSON.stringify(local)); } catch {}
+    if (user) { setSyncing(true); fbDb.collection('users').doc(user.uid).collection('campaigns').doc(id).set(data).then(() => setSyncing(false)).catch(() => setSyncing(false)); }
+  };
+
+  const loadCampaign = (id) => {
+    const c = savedCampaigns[id]; if (!c) return;
+    setProjectName(c.projectName); setReleaseDate(c.releaseDate); setDisciplines(c.disciplines);
+    setCampaignId(id); localStorage.setItem('fmp-current', id); setEditingTask(null);
+  };
+
+  const newCampaign = () => {
+    setProjectName("Untitled Film"); setReleaseDate("2026-10-16");
+    setDisciplines(MD_DISCIPLINES.map(d => ({...d, id: uid(), tasks: d.tasks.map((t, i) => { const s = addDays("2026-10-16", -(t.durationWeeks*7)-(i*7)); return {...t, id: uid(), startDate: s, endDate: addDays(s, t.durationWeeks*7)}; })})));
+    setCampaignId(null); setEditingTask(null);
+  };
+
+  const removeCampaign = (id) => {
+    setSavedCampaigns(prev => { const next = {...prev}; delete next[id]; return next; });
+    try { const local = JSON.parse(localStorage.getItem('fmp-campaigns') || '{}'); delete local[id]; localStorage.setItem('fmp-campaigns', JSON.stringify(local)); } catch {}
+    if (user) fbDb.collection('users').doc(user.uid).collection('campaigns').doc(id).delete();
+    if (campaignId === id) { setCampaignId(null); localStorage.removeItem('fmp-current'); }
+  };
+
+  const exportCampaign = () => {
+    const data = { projectName, releaseDate, disciplines, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = projectName.replace(/[^a-z0-9]+/gi,'-').toLowerCase() + '-pipeline.json'; a.click();
+  };
+
+  const importCampaign = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.projectName && data.disciplines) {
+          const id = uid();
+          setProjectName(data.projectName); setReleaseDate(data.releaseDate || "2026-10-16"); setDisciplines(data.disciplines);
+          setCampaignId(id); localStorage.setItem('fmp-current', id);
+          const saveData = {...data, savedAt: new Date().toISOString()};
+          setSavedCampaigns(prev => ({...prev, [id]: saveData}));
+          try { const local = JSON.parse(localStorage.getItem('fmp-campaigns') || '{}'); local[id] = saveData; localStorage.setItem('fmp-campaigns', JSON.stringify(local)); } catch {}
+          if (user) fbDb.collection('users').doc(user.uid).collection('campaigns').doc(id).set(saveData);
+        }
+      } catch { alert("Could not read campaign file."); }
+    };
+    reader.readAsText(file); e.target.value = '';
+  };
+
+  const allTasks = useMemo(() => disciplines.flatMap(d => d.tasks.map(t => ({...t, disciplineName: d.name, disciplineColor: d.color}))), [disciplines]);
+  const projectStart = useMemo(() => { const dates = allTasks.map(t => t.startDate).filter(Boolean).sort(); return dates[0] || "2026-01-01"; }, [allTasks]);
+  const projectEnd = useMemo(() => { const dates = allTasks.map(t => t.endDate).filter(Boolean).sort(); return dates[dates.length-1] || "2027-01-01"; }, [allTasks]);
+
+  const updateTask = (discId, taskId, updates) => {
+    setDisciplines(prev => prev.map(d => d.id === discId ? {...d, tasks: d.tasks.map(t => t.id === taskId ? {...t, ...updates} : t)} : d));
+  };
+
+  const deleteTask = (discId, taskId) => {
+    setDisciplines(prev => prev.map(d => d.id === discId ? {...d, tasks: d.tasks.filter(t => t.id !== taskId)} : d));
+  };
+
+  const handlePrint = (mode) => {
+    setPrintMode(mode);
+    setTimeout(() => { window.print(); setTimeout(() => setPrintMode(null), 500); }, 200);
+  };
+
+  /* ── TASK DETAIL MODAL ──────────────────────────────────── */
+  const TaskModal = ({task, discId, onClose}) => {
+    const [t, setT] = useState({...task});
+    const save = () => { updateTask(discId, t.id, t); onClose(); };
+    return (
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={onClose}>
+        <div style={{background:"#fff",borderRadius:12,width:560,maxHeight:"80vh",overflow:"auto",padding:28,boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+          <h3 style={{fontSize:18,fontWeight:700,marginBottom:16,color:"#1a1a2e"}}>{t.title}</h3>
+          <p style={{fontSize:13,color:"#555",lineHeight:1.6,marginBottom:20}}>{t.description}</p>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+            <label style={{fontSize:12,fontWeight:600,color:"#666"}}>Start Date<br/><input type="date" value={t.startDate||""} onChange={e=>setT({...t,startDate:e.target.value})} style={{marginTop:4,width:"100%"}} /></label>
+            <label style={{fontSize:12,fontWeight:600,color:"#666"}}>End Date<br/><input type="date" value={t.endDate||""} onChange={e=>setT({...t,endDate:e.target.value})} style={{marginTop:4,width:"100%"}} /></label>
+          </div>
+          <label style={{fontSize:12,fontWeight:600,color:"#666",display:"block",marginBottom:16}}>Status<br/>
+            <select value={t.status} onChange={e=>setT({...t,status:e.target.value})} style={{marginTop:4,width:"100%",padding:"6px 8px"}}>
+              {Object.entries(STATUS_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
+            </select>
+          </label>
+          <div style={{fontSize:12,color:"#888",marginBottom:16}}>
+            <strong>Roles:</strong> {t.roles.join(", ")}<br/>
+            <strong>Duration:</strong> {t.startDate && t.endDate ? daysBetween(t.startDate, t.endDate) + " days" : t.durationWeeks + " weeks (est.)"}
+          </div>
+          <div style={{display:"flex",gap:8,justifyContent:"space-between"}}>
+            <button onClick={()=>{if(confirm("Remove this task from the pipeline?")){deleteTask(discId,t.id);onClose();}}} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #ef4444",background:"#fff",color:"#ef4444",cursor:"pointer",fontSize:13,fontWeight:600}}>Remove Task</button>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={onClose} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",fontSize:13}}>Cancel</button>
+              <button onClick={save} style={{padding:"8px 16px",borderRadius:6,border:"none",background:"#1a1a2e",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:600}}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ── OVERVIEW VIEW ──────────────────────────────────────── */
+  const OverviewView = () => {
+    const [openDiscs, setOpenDiscs] = useState({});
+    const toggle = id => setOpenDiscs(p => ({...p, [id]: !p[id]}));
+    const [showOther, setShowOther] = useState(false);
+    const totalTasks = allTasks.length;
+    const completeTasks = allTasks.filter(t => t.status === "complete").length;
+    const inProgressTasks = allTasks.filter(t => t.status === "in-progress").length;
+
+    return (
+      <div>
+        {/* Stats */}
+        <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:24}}>
+          {[
+            {label:"Disciplines", value: disciplines.length, color:"#7c3aed"},
+            {label:"Total Tasks", value: totalTasks, color:"#0ea5e9"},
+            {label:"In Progress", value: inProgressTasks, color:"#3b82f6"},
+            {label:"Complete", value: completeTasks, color:"#10b981"},
+            {label:"Release", value: fmt(releaseDate), color:"#ea580c"}
+          ].map(s => (
+            <div key={s.label} style={{background:"#fff",borderRadius:8,padding:"12px 18px",minWidth:100,borderLeft:`3px solid ${s.color}`,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
+              <div style={{fontSize:18,fontWeight:700,color:"#1a1a2e"}}>{s.value}</div>
+              <div style={{fontSize:11,color:"#888",fontWeight:500}}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* M&D Disciplines */}
+        {disciplines.map(disc => {
+          const isOpen = openDiscs[disc.id];
+          const done = disc.tasks.filter(t=>t.status==="complete").length;
+          return (
+            <div key={disc.id} style={{marginBottom:10,border:"1px solid #e5e7eb",borderRadius:8,background:"#fff",overflow:"hidden"}}>
+              <button onClick={()=>toggle(disc.id)} style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",background:isOpen?"#fafafa":"#fff",border:"none",cursor:"pointer",textAlign:"left"}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{width:4,height:32,borderRadius:2,background:disc.color}} />
+                  <div>
+                    <div style={{fontSize:15,fontWeight:600,color:"#1a1a2e"}}>{disc.name}</div>
+                    <div style={{fontSize:11,color:"#888",marginTop:2}}>{disc.tasks.length} tasks &middot; {done}/{disc.tasks.length} complete &middot; {disc.roles.join(", ")}</div>
+                  </div>
+                </div>
+                <ChevDown open={isOpen} />
+              </button>
+              {isOpen && (
+                <div style={{padding:"4px 16px 16px"}}>
+                  {disc.tasks.map(task => (
+                    <div key={task.id} onClick={()=>setEditingTask({task, discId: disc.id})} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 12px",marginBottom:4,borderRadius:6,cursor:"pointer",background:"#fafafa",border:"1px solid #f0f0f0",transition:"background .1s"}}>
+                      <div style={{width:8,height:8,borderRadius:"50%",background:STATUS_COLORS[task.status],flexShrink:0}} />
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:500,color:"#1a1a2e"}}>{task.title}</div>
+                        <div style={{fontSize:11,color:"#999",marginTop:2}}>{fmt(task.startDate)} \u2013 {fmt(task.endDate)} &middot; {STATUS_LABELS[task.status]}</div>
+                      </div>
+                      <div style={{fontSize:11,color:disc.color,fontWeight:600,flexShrink:0}}>{task.startDate && task.endDate ? daysBetween(task.startDate, task.endDate) + "d" : ""}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Other Phases Reference */}
+        <div style={{marginTop:32}}>
+          <button onClick={()=>setShowOther(!showOther)} style={{display:"flex",alignItems:"center",gap:8,padding:"10px 0",background:"none",border:"none",cursor:"pointer",fontSize:14,fontWeight:600,color:"#888"}}>
+            <ChevDown open={showOther} s={14} /> Other Pipeline Phases (Reference)
+          </button>
+          {showOther && (
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:10,marginTop:8}}>
+              {OTHER_PHASES.map(p => (
+                <div key={p.name} style={{background:"#fff",borderRadius:8,padding:"14px 16px",border:"1px solid #e5e7eb"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <span style={{fontSize:20}}>{p.icon}</span>
+                    <span style={{fontSize:14,fontWeight:600,color:"#1a1a2e"}}>{p.name}</span>
+                    <span style={{fontSize:11,color:"#999",marginLeft:"auto"}}>{p.taskCount} tasks</span>
+                  </div>
+                  <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>{p.description}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── GANTT VIEW ─────────────────────────────────────────── */
+  const GanttView = () => {
+    const totalDays = daysBetween(projectStart, projectEnd) + 14;
+    const months = [];
+    let cursor = getMonthStart(projectStart);
+    const end = addDays(projectEnd, 14);
+    while (cursor <= end) {
+      months.push(cursor);
+      const d = new Date(cursor + "T00:00:00");
+      d.setMonth(d.getMonth() + 1);
+      cursor = d.toISOString().slice(0, 10);
+    }
+    const dayWidth = 3;
+    const rowH = 28;
+    const headerH = 44;
+    const labelW = 220;
+
+    const getX = date => {
+      if (!date) return 0;
+      return daysBetween(projectStart, date) * dayWidth;
+    };
+
+    // Release date line
+    const relX = getX(releaseDate);
+
+    return (
+      <div className="gantt-scroll" style={{overflow:"auto",background:"#fff",borderRadius:8,border:"1px solid #e5e7eb"}}>
+        <div style={{display:"flex",minWidth: labelW + totalDays * dayWidth}}>
+          {/* Labels */}
+          <div style={{width:labelW,minWidth:labelW,borderRight:"1px solid #e5e7eb",background:"#fafafa",position:"sticky",left:0,zIndex:10}}>
+            <div style={{height:headerH,borderBottom:"1px solid #e5e7eb",padding:"0 12px",display:"flex",alignItems:"center",fontSize:11,fontWeight:700,color:"#888",textTransform:"uppercase",letterSpacing:"0.05em"}}>Task</div>
+            {disciplines.map(disc => (
+              <React.Fragment key={disc.id}>
+                <div style={{height:rowH,background:disc.color+"11",padding:"0 12px",display:"flex",alignItems:"center",fontSize:12,fontWeight:700,color:disc.color,borderBottom:"1px solid #f0f0f0"}}>{disc.name}</div>
+                {disc.tasks.map(task => (
+                  <div key={task.id} onClick={()=>setEditingTask({task, discId:disc.id})} style={{height:rowH,padding:"0 12px",display:"flex",alignItems:"center",fontSize:11,color:"#555",borderBottom:"1px solid #f8f8f8",cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}} title={task.title}>{task.title}</div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+          {/* Chart */}
+          <div style={{flex:1,position:"relative"}}>
+            {/* Month headers */}
+            <div style={{height:headerH,display:"flex",borderBottom:"1px solid #e5e7eb",position:"sticky",top:0,background:"#fff",zIndex:5}}>
+              {months.map(m => {
+                const x = getX(m);
+                const nextMonth = new Date(m + "T00:00:00"); nextMonth.setMonth(nextMonth.getMonth() + 1);
+                const w = daysBetween(m, nextMonth.toISOString().slice(0,10)) * dayWidth;
+                return <div key={m} style={{position:"absolute",left:x,width:w,height:headerH,borderRight:"1px solid #f0f0f0",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:"#888"}}>{monthLabel(m)}</div>;
+              })}
+            </div>
+            {/* Rows */}
+            {disciplines.map(disc => (
+              <React.Fragment key={disc.id}>
+                <div style={{height:rowH,background:disc.color+"08",borderBottom:"1px solid #f0f0f0"}} />
+                {disc.tasks.map(task => (
+                  <div key={task.id} style={{height:rowH,position:"relative",borderBottom:"1px solid #f8f8f8"}}>
+                    {task.startDate && task.endDate && (
+                      <div onClick={()=>setEditingTask({task, discId:disc.id})} style={{position:"absolute",left:getX(task.startDate),width:Math.max(daysBetween(task.startDate, task.endDate) * dayWidth, 6),height:18,top:5,borderRadius:4,background:STATUS_COLORS[task.status],opacity:0.85,cursor:"pointer",transition:"opacity .1s"}} title={`${task.title}: ${fmt(task.startDate)} \u2013 ${fmt(task.endDate)}`} />
+                    )}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+            {/* Release date line */}
+            <div style={{position:"absolute",left:relX,top:0,bottom:0,width:2,background:"#ef4444",zIndex:8,pointerEvents:"none"}}>
+              <div style={{position:"absolute",top:2,left:-28,background:"#ef4444",color:"#fff",fontSize:9,padding:"2px 6px",borderRadius:3,fontWeight:700,whiteSpace:"nowrap"}}>RELEASE</div>
+            </div>
+            {/* Today line */}
+            {(() => {
+              const today = new Date().toISOString().slice(0,10);
+              if (today >= projectStart && today <= projectEnd) {
+                return <div style={{position:"absolute",left:getX(today),top:0,bottom:0,width:1,background:"#3b82f6",zIndex:7,pointerEvents:"none",borderLeft:"1px dashed #3b82f6"}} />;
+              }
+              return null;
+            })()}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  /* ── CALENDAR VIEW ──────────────────────────────────────── */
+  const CalendarView = () => {
+    const [currentMonth, setCurrentMonth] = useState(() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); });
+    const year = parseInt(currentMonth.split("-")[0]);
+    const month = parseInt(currentMonth.split("-")[1]) - 1;
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonth = () => { const d = new Date(year, month - 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); };
+    const nextMonth = () => { const d = new Date(year, month + 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); };
+    const monthStr = new Date(year, month, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
+
+    const getTasksForDay = (day) => {
+      const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+    };
+
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push(<div key={`e${i}`} style={{background:"#fafafa",borderRadius:4,minHeight:80}} />);
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      const tasks = getTasksForDay(day);
+      const isToday = dateStr === new Date().toISOString().slice(0,10);
+      const isRelease = dateStr === releaseDate;
+      cells.push(
+        <div key={day} style={{background:isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:"hidden"}}>
+          <div style={{fontSize:12,fontWeight:isToday||isRelease?700:500,color:isRelease?"#ef4444":isToday?"#3b82f6":"#555",marginBottom:4}}>
+            {day}{isRelease ? " \u{1F3AC}" : ""}
+          </div>
+          {tasks.slice(0, 3).map(t => (
+            <div key={t.id} onClick={()=>{
+              const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
+              if(disc) setEditingTask({task:t,discId:disc.id});
+            }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:t.disciplineColor+"22",color:t.disciplineColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}} title={t.title}>
+              {t.title}
+            </div>
+          ))}
+          {tasks.length > 3 && <div style={{fontSize:9,color:"#999"}}>+{tasks.length-3} more</div>}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{background:"#fff",borderRadius:8,border:"1px solid #e5e7eb",padding:20}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <button onClick={prevMonth} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",fontSize:14}}>&larr;</button>
+          <h3 style={{fontSize:16,fontWeight:700,color:"#1a1a2e"}}>{monthStr}</h3>
+          <button onClick={nextMonth} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",fontSize:14}}>&rarr;</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
+          {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=><div key={d} style={{fontSize:11,fontWeight:700,color:"#999",textAlign:"center",padding:"4px 0"}}>{d}</div>)}
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}}>
+          {cells}
+        </div>
+        <div style={{marginTop:12,display:"flex",flexWrap:"wrap",gap:8}}>
+          {disciplines.map(d => <span key={d.id} style={{fontSize:10,padding:"3px 8px",borderRadius:10,background:d.color+"18",color:d.color,fontWeight:600}}>{d.name}</span>)}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── PRINT VIEWS ────────────────────────────────────────── */
+  if (printMode === "overview") {
+    return (
+      <div style={{padding:40,maxWidth:900,margin:"0 auto",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+        <div style={{display:"flex",alignItems:"center",gap:16,paddingBottom:20,borderBottom:"3px solid #1a1a2e",marginBottom:28}}>
+          <div>
+            <h1 style={{fontSize:28,fontWeight:800,color:"#1a1a2e",margin:0}}>{projectName}</h1>
+            <p style={{fontSize:14,color:"#666",margin:"4px 0 0"}}>Marketing & Distribution Pipeline Overview &middot; Release: {fmt(releaseDate)}</p>
+          </div>
+        </div>
+        {disciplines.map(disc => (
+          <div key={disc.id} style={{marginBottom:28,pageBreakInside:"avoid"}}>
+            <h2 style={{fontSize:16,fontWeight:700,color:disc.color,margin:"0 0 10px",paddingBottom:6,borderBottom:`2px solid ${disc.color}33`}}>{disc.name}</h2>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+              <thead>
+                <tr style={{background:"#f5f5f7"}}>
+                  <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd"}}>Task</th>
+                  <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:90}}>Start</th>
+                  <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:90}}>End</th>
+                  <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:80}}>Status</th>
+                  <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd"}}>Roles</th>
+                </tr>
+              </thead>
+              <tbody>
+                {disc.tasks.map(t => (
+                  <tr key={t.id}>
+                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontWeight:500}}>{t.title}</td>
+                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{fmt(t.startDate)}</td>
+                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{fmt(t.endDate)}</td>
+                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee"}}><span style={{fontSize:10,padding:"2px 6px",borderRadius:3,background:STATUS_COLORS[t.status]+"22",color:STATUS_COLORS[t.status],fontWeight:700}}>{STATUS_LABELS[t.status]}</span></td>
+                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontSize:10,color:"#888"}}>{t.roles.join(", ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+        <div style={{marginTop:40,paddingTop:16,borderTop:"1px solid #ddd",fontSize:10,color:"#aaa",textAlign:"center"}}>
+          Generated {new Date().toLocaleDateString()} &middot; Film Marketing & Distribution Pipeline
+        </div>
+      </div>
+    );
+  }
+
+  if (printMode === "timeline") {
+    const totalDays = daysBetween(projectStart, projectEnd) + 14;
+    const dayWidth = 2;
+    const months = [];
+    let cursor = getMonthStart(projectStart);
+    const end = addDays(projectEnd, 14);
+    while (cursor <= end) { months.push(cursor); const d = new Date(cursor + "T00:00:00"); d.setMonth(d.getMonth() + 1); cursor = d.toISOString().slice(0, 10); }
+    const getX = date => daysBetween(projectStart, date) * dayWidth;
+    return (
+      <div style={{padding:"30px 20px",fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"}}>
+        <h1 style={{fontSize:22,fontWeight:800,color:"#1a1a2e",margin:"0 0 4px"}}>{projectName} \u2014 Timeline</h1>
+        <p style={{fontSize:12,color:"#888",margin:"0 0 20px"}}>Release: {fmt(releaseDate)} &middot; {allTasks.length} tasks across {disciplines.length} disciplines</p>
+        <div style={{overflowX:"auto"}}>
+          <div style={{minWidth:200 + totalDays * dayWidth}}>
+            {/* Month headers */}
+            <div style={{display:"flex",marginLeft:200,height:24,borderBottom:"1px solid #ddd"}}>
+              {months.map(m => { const d2=new Date(m+"T00:00:00"); d2.setMonth(d2.getMonth()+1); const w=daysBetween(m,d2.toISOString().slice(0,10))*dayWidth; return <div key={m} style={{position:"absolute",marginLeft:getX(m),width:w,fontSize:9,fontWeight:700,color:"#888",textAlign:"center"}}>{monthLabel(m)}</div>; })}
+            </div>
+            {disciplines.map(disc => (
+              <div key={disc.id} style={{marginBottom:12}}>
+                <div style={{fontSize:10,fontWeight:800,color:disc.color,padding:"4px 0",marginBottom:2}}>{disc.name}</div>
+                {disc.tasks.map(t => (
+                  <div key={t.id} style={{display:"flex",alignItems:"center",height:18,marginBottom:2}}>
+                    <div style={{width:200,minWidth:200,fontSize:8,color:"#555",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",paddingRight:8}}>{t.title}</div>
+                    <div style={{position:"relative",flex:1,height:12}}>
+                      {t.startDate && t.endDate && <div style={{position:"absolute",left:getX(t.startDate),width:Math.max(daysBetween(t.startDate,t.endDate)*dayWidth,4),height:12,borderRadius:2,background:STATUS_COLORS[t.status],opacity:0.8}} />}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{marginTop:20,fontSize:9,color:"#aaa",textAlign:"center"}}>Generated {new Date().toLocaleDateString()}</div>
+      </div>
+    );
+  }
+
+  /* ── MAIN LAYOUT ────────────────────────────────────────── */
+  return (
+    <div style={{display:"flex",height:"100vh",background:"#f5f5f7"}}>
+      {/* Sidebar */}
+      <div className="sidebar-container no-print" style={{width:240,minWidth:240,background:"#1a1a2e",color:"#fff",display:"flex",flexDirection:"column",overflow:"auto"}}>
+        {/* Campaign Management */}
+        <div style={{padding:"10px 12px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+            <div style={{fontSize:10,fontWeight:700,color:"#8888aa",textTransform:"uppercase",letterSpacing:"0.05em"}}>Campaigns</div>
+            <div style={{fontSize:9,fontWeight:600,color:syncing?"#f59e0b":campaignId?"#10b981":"#8888aa"}}>
+              {syncing ? "\u25CF Syncing..." : campaignId ? (user ? "\u25CF Cloud" : "\u25CF Local") : ""}
+            </div>
+          </div>
+          {/* Auth */}
+          {authLoading ? (
+            <div style={{fontSize:10,color:"#666",padding:"4px 0"}}>Loading...</div>
+          ) : !user ? (
+            <button onClick={signIn} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"none",background:"#4285f4",color:"#fff",fontSize:11,cursor:"pointer",fontWeight:600,marginBottom:6}}>Sign in with Google</button>
+          ) : (
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,padding:"2px 0"}}>
+              {user.photoURL && <img src={user.photoURL} style={{width:16,height:16,borderRadius:"50%"}} referrerPolicy="no-referrer" />}
+              <div style={{flex:1,fontSize:9,color:"#aaa",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.email}</div>
+              <button onClick={doSignOut} style={{fontSize:9,color:"#666",background:"none",border:"none",cursor:"pointer",textDecoration:"underline",flexShrink:0}}>out</button>
+            </div>
+          )}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:3,marginBottom:6}}>
+            <button onClick={saveCampaign} style={{padding:"5px 0",borderRadius:4,border:"none",background:!campaignId?"#10b981":"rgba(255,255,255,0.08)",color:!campaignId?"#fff":"#ccc",fontSize:10,cursor:"pointer",fontWeight:600}}>{campaignId?"Save":"Save Campaign"}</button>
+            <button onClick={newCampaign} style={{padding:"5px 0",borderRadius:4,border:"none",background:"rgba(255,255,255,0.08)",color:"#ccc",fontSize:10,cursor:"pointer"}}>New Campaign</button>
+            <button onClick={exportCampaign} style={{padding:"5px 0",borderRadius:4,border:"none",background:"rgba(255,255,255,0.08)",color:"#ccc",fontSize:10,cursor:"pointer"}}>Export JSON</button>
+            <button onClick={()=>fileInputRef.current?.click()} style={{padding:"5px 0",borderRadius:4,border:"none",background:"rgba(255,255,255,0.08)",color:"#ccc",fontSize:10,cursor:"pointer"}}>Import JSON</button>
+          </div>
+          {Object.keys(savedCampaigns).length > 0 && (
+            <div style={{maxHeight:120,overflow:"auto"}}>
+              <div style={{fontSize:9,color:"#666",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.04em"}}>Saved</div>
+              {Object.entries(savedCampaigns).map(([id, c]) => (
+                <div key={id} style={{display:"flex",alignItems:"center",gap:4,padding:"5px 6px",marginBottom:1,borderRadius:4,background:id===campaignId?"rgba(255,255,255,0.12)":"transparent",cursor:"pointer"}} onClick={()=>loadCampaign(id)}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:10,color:id===campaignId?"#fff":"#aaa",fontWeight:id===campaignId?600:400,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.projectName||"Untitled"}</div>
+                    <div style={{fontSize:8,color:"#555"}}>{c.savedAt ? new Date(c.savedAt).toLocaleDateString("en-US",{month:"short",day:"numeric"}) : ""} &middot; {c.disciplines ? c.disciplines.reduce((a,d)=>a+d.tasks.length,0) : 0} tasks</div>
+                  </div>
+                  <button onClick={(e)=>{e.stopPropagation();if(confirm('Delete "'+c.projectName+'"?'))removeCampaign(id);}} style={{background:"none",border:"none",color:"#ef4444",fontSize:14,cursor:"pointer",padding:"0 2px",lineHeight:1,flexShrink:0}}>&times;</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <input ref={fileInputRef} type="file" accept=".json" onChange={importCampaign} style={{display:"none"}} />
+        </div>
+        <div style={{padding:"18px 14px 10px"}}>
+          <input value={projectName} onChange={e=>setProjectName(e.target.value)} style={{background:"transparent",border:"none",color:"#fff",fontSize:14,fontWeight:700,width:"100%",outline:"none"}} />
+          <div style={{marginTop:6}}>
+            <label style={{fontSize:10,color:"#8888aa"}}>Release Date</label>
+            <input type="date" value={releaseDate} onChange={e=>setReleaseDate(e.target.value)} style={{display:"block",marginTop:3,width:"100%",background:"rgba(255,255,255,0.08)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:4,color:"#fff",padding:"4px 6px",fontSize:11}} />
+          </div>
+        </div>
+
+        {/* View tabs */}
+        <div style={{padding:"8px 10px",display:"flex",gap:4}}>
+          {[["overview","Overview"],["gantt","Timeline"],["calendar","Calendar"]].map(([v,l])=>(
+            <button key={v} onClick={()=>setView(v)} style={{flex:1,padding:"6px 0",borderRadius:5,border:"none",background:view===v?"rgba(255,255,255,0.15)":"transparent",color:view===v?"#fff":"#8888aa",fontSize:11,fontWeight:600,cursor:"pointer"}}>{l}</button>
+          ))}
+        </div>
+
+        {/* Discipline nav */}
+        <nav style={{flex:1,padding:"4px 8px"}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#8888aa",textTransform:"uppercase",letterSpacing:"0.05em",padding:"8px 8px 4px"}}>Disciplines</div>
+          {disciplines.map(d => {
+            const done = d.tasks.filter(t=>t.status==="complete").length;
+            const pct = Math.round(done/d.tasks.length*100);
+            return (
+              <button key={d.id} onClick={()=>setSelectedDiscipline(d.id===selectedDiscipline?null:d.id)} style={{width:"100%",display:"flex",alignItems:"center",gap:8,padding:"7px 8px",background:selectedDiscipline===d.id?"rgba(255,255,255,0.08)":"transparent",border:"none",borderRadius:6,cursor:"pointer",textAlign:"left",color:selectedDiscipline===d.id?"#fff":"#aaa",marginBottom:1}}>
+                <div style={{width:3,height:20,borderRadius:2,background:d.color}} />
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:12,fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{d.name}</div>
+                  <div style={{fontSize:10,color:"#666",marginTop:1}}>{done}/{d.tasks.length} &middot; {pct}%</div>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Print buttons */}
+        <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,255,255,0.08)"}}>
+          <div style={{fontSize:10,fontWeight:700,color:"#8888aa",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Export PDF</div>
+          <button onClick={()=>handlePrint("overview")} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer",marginBottom:4}}>Project Overview</button>
+          <button onClick={()=>handlePrint("timeline")} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer"}}>Timeline Export</button>
+        </div>
+      </div>
+
+      {/* Main */}
+      <div className="main-scroll" style={{flex:1,overflow:"auto",padding:24}}>
+        <div style={{maxWidth:view==="gantt"?undefined:960,margin:view==="gantt"?undefined:"0 auto"}}>
+          {view === "overview" && <OverviewView />}
+          {view === "gantt" && <GanttView />}
+          {view === "calendar" && <CalendarView />}
+        </div>
+      </div>
+
+      {/* Task Edit Modal */}
+      {editingTask && <TaskModal task={editingTask.task} discId={editingTask.discId} onClose={()=>setEditingTask(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
