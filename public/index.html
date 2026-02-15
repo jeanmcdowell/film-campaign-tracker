@@ -921,6 +921,7 @@ function App() {
   const CalendarView = () => {
     const [currentMonth, setCurrentMonth] = useState(() => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0"); });
     const [expandedDate, setExpandedDate] = useState(null);
+    const [calendarDiscFilter, setCalendarDiscFilter] = useState("all");
     const year = parseInt(currentMonth.split("-")[0]);
     const month = parseInt(currentMonth.split("-")[1]) - 1;
     const firstDay = new Date(year, month, 1).getDay();
@@ -928,10 +929,18 @@ function App() {
     const prevMonth = () => { const d = new Date(year, month - 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); setExpandedDate(null); };
     const nextMonth = () => { const d = new Date(year, month + 1, 1); setCurrentMonth(d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0")); setExpandedDate(null); };
     const monthStr = new Date(year, month, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
+    const activeDiscs = disciplines.filter(d => d.tasks.length > 0);
+    const selectedDisc = calendarDiscFilter !== "all" ? disciplines.find(d => d.id === calendarDiscFilter) : null;
+    const filterColor = selectedDisc ? selectedDisc.color : campaignColor;
 
     const getTasksForDay = (day) => {
       const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-      return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+      let tasks = allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+      if (calendarDiscFilter !== "all") {
+        const disc = disciplines.find(d => d.id === calendarDiscFilter);
+        if (disc) { const discTaskIds = new Set(disc.tasks.map(t => t.id)); tasks = tasks.filter(t => discTaskIds.has(t.id)); }
+      }
+      return tasks;
     };
 
     const handleDateClick = (day, tasks) => {
@@ -940,7 +949,11 @@ function App() {
       setExpandedDate(expandedDate === dateStr ? null : dateStr);
     };
 
-    const expandedTasks = expandedDate ? allTasks.filter(t => t.startDate && t.endDate && expandedDate >= t.startDate && expandedDate <= t.endDate) : [];
+    let expandedTasks = expandedDate ? allTasks.filter(t => t.startDate && t.endDate && expandedDate >= t.startDate && expandedDate <= t.endDate) : [];
+    if (expandedDate && calendarDiscFilter !== "all") {
+      const disc = disciplines.find(d => d.id === calendarDiscFilter);
+      if (disc) { const ids = new Set(disc.tasks.map(t => t.id)); expandedTasks = expandedTasks.filter(t => ids.has(t.id)); }
+    }
     const expandedDateFormatted = expandedDate ? new Date(expandedDate + "T12:00:00").toLocaleDateString("en-US", {weekday:"long", month:"long", day:"numeric", year:"numeric"}) : "";
 
     const cells = [];
@@ -960,8 +973,9 @@ function App() {
           {visibleTasks.map(t => {
             const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
             const discColor = disc ? disc.color : campaignColor;
+            const pillColor = (isExpanded || calendarDiscFilter !== "all") ? discColor : campaignColor;
             return (
-              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:isExpanded?discColor+"18":campaignColor+"18",color:isExpanded?discColor:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${isExpanded?discColor:campaignColor}`}} title={t.title}>{t.title}</div>
+              <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={t.title}>{t.title}</div>
             );
           })}
           {!isExpanded && tasks.length > 3 && <div style={{fontSize:9,color:campaignColor,fontWeight:600,cursor:"pointer"}}>+{tasks.length-3} more &darr;</div>}
@@ -972,11 +986,20 @@ function App() {
 
     return (
       <div style={{background:"#fff",borderRadius:8,border:"1px solid #e5e7eb",padding:20}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
           <button onClick={prevMonth} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",fontSize:14}}>&larr;</button>
-          <h3 style={{fontSize:16,fontWeight:700,color:"#1a1a2e"}}>{monthStr}</h3>
+          <h3 style={{fontSize:16,fontWeight:700,color:"#1a1a2e"}}>{monthStr}{selectedDisc && <span style={{fontSize:12,fontWeight:600,color:selectedDisc.color,marginLeft:8}}>— {selectedDisc.name}</span>}</h3>
           <button onClick={nextMonth} style={{padding:"6px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",cursor:"pointer",fontSize:14}}>&rarr;</button>
         </div>
+        {/* ── Discipline Sub-Calendar Filter ── */}
+        {activeDiscs.length > 1 && (
+          <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:12,padding:"8px 0",borderTop:"1px solid #f0f0f0",borderBottom:"1px solid #f0f0f0"}}>
+            <button onClick={()=>{setCalendarDiscFilter("all");setExpandedDate(null);}} style={{fontSize:10,padding:"4px 10px",borderRadius:12,border:calendarDiscFilter==="all"?`2px solid ${campaignColor}`:"1px solid #ddd",background:calendarDiscFilter==="all"?campaignColor:"#fff",color:calendarDiscFilter==="all"?"#fff":"#666",fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>All Disciplines</button>
+            {activeDiscs.map(d => (
+              <button key={d.id} onClick={()=>{setCalendarDiscFilter(calendarDiscFilter===d.id?"all":d.id);setExpandedDate(null);}} style={{fontSize:10,padding:"4px 10px",borderRadius:12,border:calendarDiscFilter===d.id?`2px solid ${d.color}`:"1px solid #ddd",background:calendarDiscFilter===d.id?d.color:"#fff",color:calendarDiscFilter===d.id?"#fff":d.color,fontWeight:600,cursor:"pointer",transition:"all 0.15s"}}>{d.name}</button>
+            ))}
+          </div>
+        )}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:4}}>
           {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].map(d=><div key={d} style={{fontSize:11,fontWeight:700,color:"#999",textAlign:"center",padding:"4px 0"}}>{d}</div>)}
         </div>
@@ -1020,11 +1043,7 @@ function App() {
           </div>
         )}
 
-        {disciplines.filter(d=>d.tasks.length>0).length > 0 && (
-          <div style={{marginTop:12,display:"flex",flexWrap:"wrap",gap:8}}>
-            {disciplines.filter(d=>d.tasks.length>0).map(d => <span key={d.id} style={{fontSize:10,padding:"3px 8px",borderRadius:10,background:d.color+"18",color:d.color,fontWeight:600}}>{d.name}</span>)}
-          </div>
-        )}
+        {/* discipline legend now integrated into filter bar above */}
       </div>
     );
   };
