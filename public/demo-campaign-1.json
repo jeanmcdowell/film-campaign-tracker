@@ -1,0 +1,94 @@
+{
+  "projectName": "ECLIPSE RISING",
+  "releaseDate": "2026-07-17",
+  "campaignColor": "#b91c1c",
+  "disciplines": [
+    {
+      "id": "d1a", "name": "Marketing Strategy & Planning", "color": "#7c3aed",
+      "tasks": [
+        {"id":"t1","title":"Initial Filmmaker Meeting","description":"Sit-down with director & producers to align on creative vision, audience, and tone.","status":"complete","startDate":"2026-01-05","endDate":"2026-01-09","durationWeeks":1,"roles":["Head of Marketing","Campaign Manager","Director"]},
+        {"id":"t2","title":"Market Positioning & Target Audience Definition","description":"Define competitive positioning, core selling proposition. Segment audiences by demographics and psychographics.","status":"complete","startDate":"2026-01-12","endDate":"2026-02-20","durationWeeks":6,"roles":["Head of Marketing","Market Research"]},
+        {"id":"t3","title":"Competitive Release Landscape Analysis","description":"Map competing summer releases: tentpoles, same genre, counter-programming.","status":"complete","startDate":"2026-01-19","endDate":"2026-02-06","durationWeeks":3,"roles":["Campaign Manager","Distribution"]},
+        {"id":"t4","title":"Campaign Strategy Deck & Presentation","description":"Compile positioning, audience research, and recommended approach into strategy deck.","status":"in-progress","startDate":"2026-02-09","endDate":"2026-02-27","durationWeeks":3,"roles":["Head of Marketing","Campaign Manager"]},
+        {"id":"t5","title":"Ongoing Filmmaker Check-Ins","description":"Weekly touchpoints with director to review materials and maintain alignment.","status":"in-progress","startDate":"2026-01-12","endDate":"2026-07-17","durationWeeks":24,"roles":["Head of Marketing","Director"]}
+      ]
+    },
+    {
+      "id": "d1b", "name": "Marketing Budget & Operations", "color": "#475569",
+      "tasks": [
+        {"id":"t6","title":"Preliminary P&A Budget Development","description":"Build initial $45M P&A budget framework based on projected $200M+ domestic gross.","status":"complete","startDate":"2026-01-05","endDate":"2026-01-30","durationWeeks":4,"roles":["Head of Marketing","Marketing Finance"]},
+        {"id":"t7","title":"Budget Finalization & Approval","description":"Lock final P&A budget. Secure executive and studio head approval.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-02-13","durationWeeks":2,"roles":["Head of Marketing","Studio Executive"]},
+        {"id":"t8","title":"Materials & Asset Management","description":"Centralized tracking of all creative assets across departments and territories.","status":"not-started","startDate":"2026-02-16","endDate":"2026-07-17","durationWeeks":20,"roles":["Campaign Manager","Asset Manager"]}
+      ]
+    },
+    {
+      "id": "d1c", "name": "Creative Advertising: Trailers", "color": "#b91c1c",
+      "tasks": [
+        {"id":"t9","title":"Teaser Trailer Production","description":"90-second teaser establishing tone and spectacle without major plot reveals.","status":"complete","startDate":"2026-01-12","endDate":"2026-02-20","durationWeeks":6,"roles":["Trailer Editor","Trailer House","Head of Marketing"]},
+        {"id":"t10","title":"Teaser Trailer Debut & Distribution","description":"Super Bowl debut, coordinated social media rollout, paid amplification.","status":"complete","startDate":"2026-02-01","endDate":"2026-02-08","durationWeeks":1,"roles":["Head of Marketing","Digital Marketing","PR Agency"]},
+        {"id":"t11","title":"Theatrical Trailer Production","description":"Full 2:20 theatrical trailer — the most important marketing asset.","status":"in-progress","startDate":"2026-02-09","endDate":"2026-04-03","durationWeeks":8,"roles":["Trailer Editor","Trailer House","Director"]},
+        {"id":"t12","title":"Trailer Music Licensing","description":"Commission custom trailer music and license sync rights for hero tracks.","status":"in-progress","startDate":"2026-01-26","endDate":"2026-03-06","durationWeeks":6,"roles":["Music Supervisor","Business Affairs"]},
+        {"id":"t13","title":"Filmmaker Trailer Approval Process","description":"Formal approval cycles with director per contractual creative rights.","status":"not-started","startDate":"2026-03-23","endDate":"2026-04-17","durationWeeks":4,"roles":["Head of Marketing","Director"]},
+        {"id":"t14","title":"International Trailer Versioning","description":"Adapt domestic trailer for international markets and ratings boards.","status":"not-started","startDate":"2026-04-06","endDate":"2026-05-01","durationWeeks":4,"roles":["Trailer House","International Marketing"]}
+      ]
+    },
+    {
+      "id": "d1d", "name": "Creative Advertising: TV Spots & Digital", "color": "#dc2626",
+      "tasks": [
+        {"id":"t15","title":"TV Spot Production: :60 Spots","description":"Produce 60-second spots for premium broadcast placement.","status":"not-started","startDate":"2026-04-06","endDate":"2026-04-24","durationWeeks":3,"roles":["Trailer Editor","Creative Agency"]},
+        {"id":"t16","title":"TV Spot Production: :30 Spots","description":"Multiple :30 versions targeting different demographics.","status":"not-started","startDate":"2026-04-13","endDate":"2026-05-01","durationWeeks":3,"roles":["Trailer Editor","Media Planner"]},
+        {"id":"t17","title":"Digital-First Video Creative","description":"6-second bumpers, vertical video for TikTok/Reels/Shorts.","status":"not-started","startDate":"2026-04-20","endDate":"2026-05-15","durationWeeks":4,"roles":["Creative Agency","Digital Marketing"]}
+      ]
+    },
+    {
+      "id": "d1e", "name": "Key Art & Visual Identity", "color": "#9333ea",
+      "tasks": [
+        {"id":"t18","title":"Talent Photo Shoot","description":"Dedicated cast photo shoot for key art and press materials.","status":"complete","startDate":"2025-12-01","endDate":"2025-12-12","durationWeeks":2,"roles":["Key Art Designer","Photographer","Talent Reps"]},
+        {"id":"t19","title":"Teaser One-Sheet Design","description":"Initial teaser poster establishing the film's visual identity.","status":"complete","startDate":"2026-01-05","endDate":"2026-01-30","durationWeeks":4,"roles":["Key Art Designer","Creative Agency"]},
+        {"id":"t20","title":"Final One-Sheet (Payoff Poster)","description":"Definitive theatrical poster for all advertising and exhibition.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-03-13","durationWeeks":6,"roles":["Key Art Designer","Head of Marketing"]},
+        {"id":"t21","title":"Outdoor & Transit Creative Adaptation","description":"Adapt key art for billboards, bus shelters, subway dominations.","status":"not-started","startDate":"2026-03-16","endDate":"2026-04-03","durationWeeks":3,"roles":["Key Art Designer","Media Planner"]}
+      ]
+    },
+    {
+      "id": "d1f", "name": "Research, Tracking & Materials Testing", "color": "#0891b2",
+      "tasks": [
+        {"id":"t22","title":"Baseline Awareness & Interest Study","description":"Quantitative research establishing baseline awareness and interest levels.","status":"complete","startDate":"2026-01-12","endDate":"2026-01-30","durationWeeks":3,"roles":["Market Research","Research Vendor"]},
+        {"id":"t23","title":"Trailer Testing (Quantitative)","description":"Test teaser with recruited audiences: purchase intent, emotional response.","status":"in-progress","startDate":"2026-02-09","endDate":"2026-02-27","durationWeeks":3,"roles":["Market Research","Research Vendor"]},
+        {"id":"t24","title":"Ongoing Tracking Studies","description":"Weekly tracking: awareness, first choice, definite interest.","status":"not-started","startDate":"2026-03-02","endDate":"2026-07-17","durationWeeks":12,"roles":["Market Research","Campaign Manager"]}
+      ]
+    },
+    {
+      "id": "d1g", "name": "Paid Media & Media Planning", "color": "#0369a1",
+      "tasks": [
+        {"id":"t25","title":"Media Strategy & Channel Planning","description":"Channel mix, flighting schedule, reach/frequency targets for $45M spend.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-02-27","durationWeeks":4,"roles":["Media Planner","Head of Marketing"]},
+        {"id":"t26","title":"National TV Buy (Broadcast & Cable)","description":"Negotiate national TV buy across broadcast, cable, and connected TV.","status":"not-started","startDate":"2026-03-09","endDate":"2026-05-01","durationWeeks":8,"roles":["Media Buyer","Media Planner"]},
+        {"id":"t27","title":"Paid Social Media Advertising","description":"Execute paid campaigns across Meta, TikTok, YouTube, Snapchat.","status":"not-started","startDate":"2026-04-27","endDate":"2026-07-17","durationWeeks":8,"roles":["Digital Marketing","Media Buyer"]}
+      ]
+    },
+    {
+      "id": "d1h", "name": "National PR, Publicity & Press", "color": "#e11d48",
+      "tasks": [
+        {"id":"t28","title":"EPK Production","description":"BTS footage, cast interviews, b-roll, hi-res stills, bios.","status":"in-progress","startDate":"2025-12-01","endDate":"2026-02-20","durationWeeks":12,"roles":["Unit Publicist","EPK Producer"]},
+        {"id":"t29","title":"Long-Lead Press Campaign","description":"Exclusive features in Vanity Fair, Empire, Total Film 4-6 months before release.","status":"not-started","startDate":"2026-02-23","endDate":"2026-04-17","durationWeeks":8,"roles":["Publicity","PR Agency"]},
+        {"id":"t30","title":"Premiere Event Planning","description":"World premiere: red carpet, press line, screening, after-party.","status":"not-started","startDate":"2026-05-25","endDate":"2026-07-03","durationWeeks":6,"roles":["Events Team","PR Agency"]}
+      ]
+    },
+    {
+      "id": "d1i", "name": "Digital & Social Media", "color": "#0ea5e9",
+      "tasks": [
+        {"id":"t31","title":"Launch Official Social Media Profiles","description":"Create @EclipseRisingMovie across Instagram, TikTok, X, YouTube.","status":"complete","startDate":"2026-01-05","endDate":"2026-01-16","durationWeeks":2,"roles":["Social Media Manager"]},
+        {"id":"t32","title":"Social Media Content Calendar","description":"Multi-month content plan: reveals, BTS, cast takeovers, countdown.","status":"in-progress","startDate":"2026-01-19","endDate":"2026-07-17","durationWeeks":24,"roles":["Social Media Manager","Content Creator"]},
+        {"id":"t33","title":"Official Film Website Build","description":"Dedicated film website with trailer embed, ticketing integration, SEO.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-03-13","durationWeeks":6,"roles":["Web Developer","Digital Marketing"]}
+      ]
+    },
+    {
+      "id": "d1j", "name": "Theatrical Release & Exhibition", "color": "#ea580c",
+      "tasks": [
+        {"id":"t34","title":"Release Date Selection","description":"July 17, 2026 locked after competitive analysis of summer calendar.","status":"complete","startDate":"2025-11-03","endDate":"2025-11-28","durationWeeks":4,"roles":["Head of Distribution","Marketing"]},
+        {"id":"t35","title":"Theater Booking & Screen Count","description":"Negotiate with AMC, Regal, Cinemark for 4,200+ screens opening weekend.","status":"not-started","startDate":"2026-05-04","endDate":"2026-06-12","durationWeeks":6,"roles":["Booker","Exhibition Relations"]},
+        {"id":"t36","title":"Premium Format Allocation","description":"Secure IMAX, Dolby Cinema, ScreenX, 4DX bookings.","status":"not-started","startDate":"2026-04-06","endDate":"2026-05-29","durationWeeks":8,"roles":["Distribution","Premium Format Partners"]}
+      ]
+    }
+  ],
+  "exportedAt": "2026-02-15T12:00:00.000Z"
+}

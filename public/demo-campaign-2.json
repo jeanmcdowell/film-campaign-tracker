@@ -1,0 +1,78 @@
+{
+  "projectName": "THE QUIET HOURS",
+  "releaseDate": "2026-11-06",
+  "campaignColor": "#059669",
+  "disciplines": [
+    {
+      "id": "d2a", "name": "Marketing Strategy & Planning", "color": "#7c3aed",
+      "tasks": [
+        {"id":"u1","title":"Initial Filmmaker Meeting","description":"Meet with director to discuss awards-season positioning and intimate tone.","status":"complete","startDate":"2026-01-19","endDate":"2026-01-23","durationWeeks":1,"roles":["Head of Marketing","Campaign Manager","Director"]},
+        {"id":"u2","title":"Market Positioning & Target Audience Definition","description":"Position as prestige fall drama. Target: 25-54 upscale, indie-friendly audiences.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-03-13","durationWeeks":6,"roles":["Head of Marketing","Market Research"]}
+      ]
+    },
+    {
+      "id": "d2b", "name": "Marketing Budget & Operations", "color": "#475569",
+      "tasks": [
+        {"id":"u3","title":"Preliminary P&A Budget Development","description":"Develop $12M P&A budget for targeted platform release expanding to 800 screens.","status":"in-progress","startDate":"2026-02-09","endDate":"2026-03-06","durationWeeks":4,"roles":["Head of Marketing","Marketing Finance"]}
+      ]
+    },
+    {
+      "id": "d2c", "name": "Creative Advertising: Trailers", "color": "#b91c1c",
+      "tasks": [
+        {"id":"u4","title":"Teaser Trailer Production","description":"Atmospheric 75-second teaser focused on mood and performance, no plot reveals.","status":"not-started","startDate":"2026-04-06","endDate":"2026-05-15","durationWeeks":6,"roles":["Trailer Editor","Head of Marketing"]},
+        {"id":"u5","title":"Theatrical Trailer Production","description":"Restrained 2:00 theatrical trailer emphasizing performances and critical acclaim.","status":"not-started","startDate":"2026-06-01","endDate":"2026-07-24","durationWeeks":8,"roles":["Trailer Editor","Director"]}
+      ]
+    },
+    {
+      "id": "d2d", "name": "Key Art & Visual Identity", "color": "#9333ea",
+      "tasks": [
+        {"id":"u6","title":"Talent Photo Shoot","description":"Intimate portrait session with lead actors for awards-style key art.","status":"not-started","startDate":"2026-03-16","endDate":"2026-03-27","durationWeeks":2,"roles":["Key Art Designer","Photographer"]},
+        {"id":"u7","title":"Teaser One-Sheet Design","description":"Minimalist teaser poster with evocative imagery and festival laurels.","status":"not-started","startDate":"2026-04-06","endDate":"2026-05-01","durationWeeks":4,"roles":["Key Art Designer","Creative Agency"]}
+      ]
+    },
+    {
+      "id": "d2e", "name": "Research, Tracking & Materials Testing", "color": "#0891b2",
+      "tasks": [
+        {"id":"u8","title":"Baseline Awareness & Interest Study","description":"Initial quant research: awareness among arthouse/specialty audiences.","status":"not-started","startDate":"2026-03-09","endDate":"2026-03-27","durationWeeks":3,"roles":["Market Research","Research Vendor"]},
+        {"id":"u9","title":"Test Screening Audience Research","description":"Two recruited test screenings with detailed exit surveys.","status":"not-started","startDate":"2026-04-20","endDate":"2026-05-29","durationWeeks":6,"roles":["Market Research","Producer","Editor"]}
+      ]
+    },
+    {
+      "id": "d2f", "name": "National PR, Publicity & Press", "color": "#e11d48",
+      "tasks": [
+        {"id":"u10","title":"EPK Production","description":"Intimate BTS documentary, director interview, cast reflections.","status":"not-started","startDate":"2026-03-02","endDate":"2026-05-22","durationWeeks":12,"roles":["Unit Publicist","EPK Producer"]},
+        {"id":"u11","title":"Awards Campaign Strategy","description":"Plan guild screenings, FYC campaign, Q&A events, voter outreach.","status":"not-started","startDate":"2026-06-01","endDate":"2026-09-21","durationWeeks":16,"roles":["Awards Strategist","PR Agency"]}
+      ]
+    },
+    {
+      "id": "d2g", "name": "Festival Strategy", "color": "#f59e0b",
+      "tasks": [
+        {"id":"u12","title":"Festival Selection & Submission","description":"Target Venice or Telluride world premiere; TIFF as backup for broader exposure.","status":"in-progress","startDate":"2026-01-26","endDate":"2026-03-20","durationWeeks":8,"roles":["Festival Strategist","Producer"]},
+        {"id":"u13","title":"Festival Premiere Logistics","description":"DCP delivery, talent travel, press day, party planning for Venice.","status":"not-started","startDate":"2026-06-15","endDate":"2026-07-24","durationWeeks":6,"roles":["Festival Strategist","Producer","Publicity"]},
+        {"id":"u14","title":"Festival Press & Social Coverage","description":"Red carpet, press conference, live social coverage at festival.","status":"not-started","startDate":"2026-08-24","endDate":"2026-09-04","durationWeeks":2,"roles":["Publicity","Social Media Manager"]}
+      ]
+    },
+    {
+      "id": "d2h", "name": "Digital & Social Media", "color": "#0ea5e9",
+      "tasks": [
+        {"id":"u15","title":"Launch Official Social Media Profiles","description":"Create understated, elegant social presence across Instagram and X.","status":"not-started","startDate":"2026-04-13","endDate":"2026-04-24","durationWeeks":2,"roles":["Social Media Manager"]},
+        {"id":"u16","title":"Influencer & Creator Partnerships","description":"Partner with film critics, Letterboxd influencers, and bookstagram community.","status":"not-started","startDate":"2026-07-06","endDate":"2026-08-14","durationWeeks":6,"roles":["Digital Marketing","Influencer Agency"]}
+      ]
+    },
+    {
+      "id": "d2i", "name": "Paid Media & Media Planning", "color": "#0369a1",
+      "tasks": [
+        {"id":"u17","title":"Media Strategy & Channel Planning","description":"Targeted media plan: upscale digital, NPR, NYT, New Yorker, film podcasts.","status":"not-started","startDate":"2026-05-04","endDate":"2026-05-29","durationWeeks":4,"roles":["Media Planner","Head of Marketing"]},
+        {"id":"u18","title":"Paid Social Media Advertising","description":"Targeted campaigns on Instagram and YouTube to arthouse audiences.","status":"not-started","startDate":"2026-09-07","endDate":"2026-10-30","durationWeeks":8,"roles":["Digital Marketing","Media Buyer"]}
+      ]
+    },
+    {
+      "id": "d2j", "name": "Theatrical Release & Exhibition", "color": "#ea580c",
+      "tasks": [
+        {"id":"u19","title":"Release Date Selection","description":"November 6 for prime awards season positioning.","status":"complete","startDate":"2025-12-08","endDate":"2026-01-02","durationWeeks":4,"roles":["Head of Distribution","Marketing"]},
+        {"id":"u20","title":"Theater Booking & Screen Count","description":"Platform release: 4 screens NY/LA expanding to 800 screens over 6 weeks.","status":"not-started","startDate":"2026-08-31","endDate":"2026-10-09","durationWeeks":6,"roles":["Booker","Exhibition Relations"]}
+      ]
+    }
+  ],
+  "exportedAt": "2026-02-15T12:00:00.000Z"
+}

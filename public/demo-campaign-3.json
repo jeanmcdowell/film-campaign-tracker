@@ -1,0 +1,99 @@
+{
+  "projectName": "JINGLE BELL HEIST",
+  "releaseDate": "2026-12-18",
+  "campaignColor": "#e11d48",
+  "disciplines": [
+    {
+      "id": "d3a", "name": "Marketing Strategy & Planning", "color": "#7c3aed",
+      "tasks": [
+        {"id":"v1","title":"Initial Filmmaker Meeting","description":"Align on comedic tone, family-friendly positioning, and holiday release strategy.","status":"complete","startDate":"2026-01-05","endDate":"2026-01-09","durationWeeks":1,"roles":["Head of Marketing","Director","Producer"]},
+        {"id":"v2","title":"Market Positioning & Target Audience Definition","description":"Four-quadrant holiday comedy. Primary: families 25-49 with kids. Secondary: date-night couples.","status":"complete","startDate":"2026-01-12","endDate":"2026-02-20","durationWeeks":6,"roles":["Head of Marketing","Market Research"]},
+        {"id":"v3","title":"Competitive Release Landscape Analysis","description":"Map holiday release corridor: other family films, tentpoles, awards season crossover.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-02-20","durationWeeks":3,"roles":["Campaign Manager","Distribution"]},
+        {"id":"v4","title":"Campaign Strategy Deck & Presentation","description":"Holiday comedy playbook: nostalgia hooks, family appeal, star power positioning.","status":"not-started","startDate":"2026-02-23","endDate":"2026-03-13","durationWeeks":3,"roles":["Head of Marketing","Campaign Manager"]}
+      ]
+    },
+    {
+      "id": "d3b", "name": "Marketing Budget & Operations", "color": "#475569",
+      "tasks": [
+        {"id":"v5","title":"Preliminary P&A Budget Development","description":"$28M P&A budget for broad holiday release targeting $120M domestic.","status":"in-progress","startDate":"2026-02-02","endDate":"2026-02-27","durationWeeks":4,"roles":["Head of Marketing","Marketing Finance"]},
+        {"id":"v6","title":"Budget Finalization & Approval","description":"Lock budget with emphasis on TV, digital, and family-oriented activations.","status":"not-started","startDate":"2026-03-02","endDate":"2026-03-13","durationWeeks":2,"roles":["Head of Marketing","Studio Executive"]},
+        {"id":"v7","title":"Monthly Budget Tracking","description":"Track P&A spend vs. budget across all line items weekly.","status":"not-started","startDate":"2026-03-16","endDate":"2026-12-18","durationWeeks":24,"roles":["Marketing Finance","Campaign Manager"]}
+      ]
+    },
+    {
+      "id": "d3c", "name": "Creative Advertising: Trailers", "color": "#b91c1c",
+      "tasks": [
+        {"id":"v8","title":"Teaser Trailer Production","description":"Fun, fast-paced 60-second teaser playing up the heist comedy premise and star chemistry.","status":"not-started","startDate":"2026-04-27","endDate":"2026-06-05","durationWeeks":6,"roles":["Trailer Editor","Trailer House"]},
+        {"id":"v9","title":"Theatrical Trailer Production","description":"Full 2:20 red-band and green-band versions for broad and family audiences.","status":"not-started","startDate":"2026-06-15","endDate":"2026-08-07","durationWeeks":8,"roles":["Trailer Editor","Director"]},
+        {"id":"v10","title":"Trailer Music Licensing","description":"License upbeat holiday/heist music — classic Christmas songs and original score.","status":"not-started","startDate":"2026-05-18","endDate":"2026-06-26","durationWeeks":6,"roles":["Music Supervisor","Business Affairs"]}
+      ]
+    },
+    {
+      "id": "d3d", "name": "Creative Advertising: TV Spots & Digital", "color": "#dc2626",
+      "tasks": [
+        {"id":"v11","title":"TV Spot Production: :60 Spots","description":"Holiday-themed 60-second spots for Thanksgiving weekend premiere slots.","status":"not-started","startDate":"2026-09-07","endDate":"2026-09-25","durationWeeks":3,"roles":["Trailer Editor","Creative Agency"]},
+        {"id":"v12","title":"TV Spot Production: :30 Spots","description":"High-rotation :30 spots targeting family viewing: NFL, holiday specials, primetime.","status":"not-started","startDate":"2026-09-14","endDate":"2026-10-02","durationWeeks":3,"roles":["Trailer Editor","Media Planner"]},
+        {"id":"v13","title":"Digital-First Video Creative","description":"TikTok challenges, holiday-themed bumpers, Instagram Reels with cast.","status":"not-started","startDate":"2026-09-28","endDate":"2026-10-23","durationWeeks":4,"roles":["Creative Agency","Digital Marketing"]}
+      ]
+    },
+    {
+      "id": "d3e", "name": "Key Art & Visual Identity", "color": "#9333ea",
+      "tasks": [
+        {"id":"v14","title":"Talent Photo Shoot","description":"Festive holiday-themed photo shoot with full cast in costume.","status":"not-started","startDate":"2026-03-30","endDate":"2026-04-10","durationWeeks":2,"roles":["Key Art Designer","Photographer","Talent Reps"]},
+        {"id":"v15","title":"Teaser One-Sheet Design","description":"Fun, colorful teaser poster with holiday heist visual concept.","status":"not-started","startDate":"2026-05-04","endDate":"2026-05-29","durationWeeks":4,"roles":["Key Art Designer","Creative Agency"]},
+        {"id":"v16","title":"Final One-Sheet (Payoff Poster)","description":"Star-driven theatrical poster with holiday imagery and comedic energy.","status":"not-started","startDate":"2026-06-29","endDate":"2026-08-07","durationWeeks":6,"roles":["Key Art Designer","Head of Marketing"]},
+        {"id":"v17","title":"Digital Display & Banner Creative","description":"Full IAB suite of holiday-themed digital display ads.","status":"not-started","startDate":"2026-09-07","endDate":"2026-09-25","durationWeeks":3,"roles":["Creative Agency","Digital Marketing"]}
+      ]
+    },
+    {
+      "id": "d3f", "name": "Research, Tracking & Materials Testing", "color": "#0891b2",
+      "tasks": [
+        {"id":"v18","title":"Baseline Awareness & Interest Study","description":"Quant baseline with family audiences and comedy moviegoers.","status":"not-started","startDate":"2026-03-16","endDate":"2026-04-03","durationWeeks":3,"roles":["Market Research","Research Vendor"]},
+        {"id":"v19","title":"Trailer Testing (Quantitative)","description":"Test teaser with families and general audiences: humor appeal, purchase intent.","status":"not-started","startDate":"2026-06-08","endDate":"2026-06-26","durationWeeks":3,"roles":["Market Research","Research Vendor"]},
+        {"id":"v20","title":"Ongoing Tracking Studies","description":"Bi-weekly tracking through holiday corridor.","status":"not-started","startDate":"2026-09-14","endDate":"2026-12-18","durationWeeks":12,"roles":["Market Research","Campaign Manager"]}
+      ]
+    },
+    {
+      "id": "d3g", "name": "Paid Media & Media Planning", "color": "#0369a1",
+      "tasks": [
+        {"id":"v21","title":"Media Strategy & Channel Planning","description":"Heavy TV + digital plan: NFL, holiday specials, family streaming, TikTok.","status":"not-started","startDate":"2026-05-04","endDate":"2026-05-29","durationWeeks":4,"roles":["Media Planner","Head of Marketing"]},
+        {"id":"v22","title":"National TV Buy","description":"Massive holiday TV buy: Thanksgiving football, holiday movie blocks, primetime.","status":"not-started","startDate":"2026-07-06","endDate":"2026-08-28","durationWeeks":8,"roles":["Media Buyer","Media Planner"]},
+        {"id":"v23","title":"Paid Social Media Advertising","description":"Family-targeted social: YouTube Kids, parent influencers, TikTok challenges.","status":"not-started","startDate":"2026-10-19","endDate":"2026-12-18","durationWeeks":8,"roles":["Digital Marketing","Media Buyer"]}
+      ]
+    },
+    {
+      "id": "d3h", "name": "National PR, Publicity & Press", "color": "#e11d48",
+      "tasks": [
+        {"id":"v24","title":"EPK Production","description":"Fun, high-energy EPK: bloopers reel, holiday BTS, cast chemistry highlights.","status":"not-started","startDate":"2026-04-06","endDate":"2026-06-26","durationWeeks":12,"roles":["Unit Publicist","EPK Producer"]},
+        {"id":"v25","title":"Short-Lead Press & Online Blitz","description":"Saturation press 2 weeks before release: morning shows, late night, podcasts.","status":"not-started","startDate":"2026-11-23","endDate":"2026-12-18","durationWeeks":4,"roles":["Publicity","PR Agency"]},
+        {"id":"v26","title":"Premiere Event Planning","description":"Star-studded holiday premiere with festive red carpet and family-friendly after-party.","status":"not-started","startDate":"2026-10-26","endDate":"2026-12-04","durationWeeks":6,"roles":["Events Team","PR Agency"]}
+      ]
+    },
+    {
+      "id": "d3i", "name": "Digital & Social Media", "color": "#0ea5e9",
+      "tasks": [
+        {"id":"v27","title":"Launch Official Social Media Profiles","description":"Create @JingleBellHeist accounts with holiday branding across all platforms.","status":"not-started","startDate":"2026-05-04","endDate":"2026-05-15","durationWeeks":2,"roles":["Social Media Manager"]},
+        {"id":"v28","title":"Social Media Content Calendar","description":"6-month holiday countdown: daily advent-style reveals, cast challenges, memes.","status":"not-started","startDate":"2026-06-01","endDate":"2026-12-18","durationWeeks":24,"roles":["Social Media Manager","Content Creator"]},
+        {"id":"v29","title":"Influencer & Creator Partnerships","description":"Partner with family YouTubers, comedy TikTokers, holiday lifestyle influencers.","status":"not-started","startDate":"2026-09-07","endDate":"2026-10-16","durationWeeks":6,"roles":["Digital Marketing","Influencer Agency"]},
+        {"id":"v30","title":"Official Film Website","description":"Holiday-themed site with countdown timer, games, ticketing integration.","status":"not-started","startDate":"2026-06-15","endDate":"2026-07-24","durationWeeks":6,"roles":["Web Developer","Digital Marketing"]}
+      ]
+    },
+    {
+      "id": "d3j", "name": "Promotional Partnerships, Stunts & Activations", "color": "#d946ef",
+      "tasks": [
+        {"id":"v31","title":"Brand Partnership Development","description":"Holiday brand deals: toy companies, streaming services, fast food holiday tie-ins.","status":"not-started","startDate":"2026-03-16","endDate":"2026-06-05","durationWeeks":12,"roles":["Promotions","Brand Partners","Licensing"]},
+        {"id":"v32","title":"Experiential Activations","description":"Holiday heist escape rooms in 10 major markets, mall pop-up experiences.","status":"not-started","startDate":"2026-09-21","endDate":"2026-11-13","durationWeeks":8,"roles":["Experiential Agency","Events Team"]},
+        {"id":"v33","title":"Promotional Merchandise","description":"Holiday-themed merch: ugly sweaters, ornaments, branded gift wrap.","status":"not-started","startDate":"2026-07-06","endDate":"2026-08-14","durationWeeks":6,"roles":["Promotions","Licensing"]}
+      ]
+    },
+    {
+      "id": "d3k", "name": "Theatrical Release & Exhibition", "color": "#ea580c",
+      "tasks": [
+        {"id":"v34","title":"Release Date Selection","description":"December 18 — prime holiday corridor, counter-programming tentpoles.","status":"complete","startDate":"2025-11-10","endDate":"2025-12-05","durationWeeks":4,"roles":["Head of Distribution","Marketing"]},
+        {"id":"v35","title":"Theater Booking & Screen Count","description":"Target 3,500+ screens for wide holiday opening.","status":"not-started","startDate":"2026-09-28","endDate":"2026-11-06","durationWeeks":6,"roles":["Booker","Exhibition Relations"]},
+        {"id":"v36","title":"Advance & Preview Screenings","description":"Family preview screenings Thanksgiving weekend to build word-of-mouth.","status":"not-started","startDate":"2026-11-23","endDate":"2026-12-04","durationWeeks":2,"roles":["Marketing","Distribution","Field Marketing"]}
+      ]
+    }
+  ],
+  "exportedAt": "2026-02-15T12:00:00.000Z"
+}

@@ -430,7 +430,12 @@ function App() {
 
   const handlePrint = (mode) => {
     setPrintMode(mode);
-    setTimeout(() => { window.print(); setTimeout(() => setPrintMode(null), 500); }, 200);
+    const ts = new Date();
+    const stamp = ts.getFullYear().toString() + String(ts.getMonth()+1).padStart(2,"0") + String(ts.getDate()).padStart(2,"0") + "-" + String(ts.getHours()).padStart(2,"0") + String(ts.getMinutes()).padStart(2,"0") + String(ts.getSeconds()).padStart(2,"0");
+    const slug = projectName.replace(/[^a-z0-9]+/gi,"-").toLowerCase();
+    const origTitle = document.title;
+    document.title = slug + "-" + mode + "-" + stamp;
+    setTimeout(() => { window.print(); setTimeout(() => { setPrintMode(null); document.title = origTitle; }, 500); }, 200);
   };
 
   /* ── TASK DETAIL MODAL ──────────────────────────────────── */
@@ -964,39 +969,170 @@ function App() {
 
   /* ── PRINT VIEWS ────────────────────────────────────────── */
   if (printMode === "overview") {
+    const activeDiscs = disciplines.filter(d => d.tasks.length > 0);
+    const totalTasks = allTasks.length;
+    const ns = allTasks.filter(t => t.status === "not-started").length;
+    const ip = allTasks.filter(t => t.status === "in-progress").length;
+    const co = allTasks.filter(t => t.status === "complete").length;
+    const bl = allTasks.filter(t => t.status === "blocked").length;
+    const pct = totalTasks > 0 ? Math.round((co / totalTasks) * 100) : 0;
+    const datesAll = allTasks.map(t => t.startDate).filter(Boolean).sort();
+    const earliest = datesAll[0] || releaseDate;
+    const upcoming = allTasks.filter(t => t.status === "in-progress" || (t.status === "not-started" && t.startDate && t.startDate <= addDays(todayStr(), 14)));
+    const blocked = allTasks.filter(t => t.status === "blocked");
+    const ps = {padding:"40px 48px",maxWidth:960,margin:"0 auto",fontSize:11,color:"#333",lineHeight:1.5};
+    const hdr = {display:"flex",alignItems:"center",gap:16,paddingBottom:16,borderBottom:`3px solid ${campaignColor}`,marginBottom:20};
+    const statBox = {flex:1,textAlign:"center",padding:"10px 6px",background:"#f8fafc",borderRadius:6,border:"1px solid #e5e7eb"};
+    const statNum = {fontSize:22,fontWeight:800,color:"#1a1a2e",margin:0};
+    const statLbl = {fontSize:9,color:"#888",textTransform:"uppercase",letterSpacing:"0.05em",marginTop:2};
+    const secTitle = (text, color) => ({fontSize:15,fontWeight:800,color:color||"#1a1a2e",margin:"0 0 10px",paddingBottom:6,borderBottom:`2px solid ${(color||"#1a1a2e")}33`});
+    const thS = {textAlign:"left",padding:"5px 8px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",fontSize:10};
+    const tdS = {padding:"4px 8px",borderBottom:"1px solid #eee",fontSize:10,verticalAlign:"top"};
+    const badge = (status) => ({display:"inline-block",fontSize:9,padding:"2px 6px",borderRadius:3,background:STATUS_COLORS[status]+"22",color:STATUS_COLORS[status],fontWeight:700,whiteSpace:"nowrap"});
     return (
-      <div style={{padding:40,maxWidth:900,margin:"0 auto"}}>
-        <div style={{display:"flex",alignItems:"center",gap:16,paddingBottom:20,borderBottom:`3px solid ${campaignColor}`,marginBottom:28}}>
-          <div style={{width:8,height:40,borderRadius:4,background:campaignColor}} />
-          <div>
-            <h1 style={{fontSize:28,fontWeight:800,color:"#1a1a2e",margin:0}}>{projectName}</h1>
-            <p style={{fontSize:14,color:"#666",margin:"4px 0 0"}}>Marketing & Distribution Pipeline &middot; Release: {fmt(releaseDate)}</p>
+      <div style={ps}>
+        {/* Page 1: Cover & Executive Summary */}
+        <div style={hdr}>
+          <div style={{width:8,height:48,borderRadius:4,background:campaignColor}} />
+          <div style={{flex:1}}>
+            <h1 style={{fontSize:30,fontWeight:900,color:"#1a1a2e",margin:0}}>{projectName}</h1>
+            <p style={{fontSize:13,color:"#666",margin:"4px 0 0"}}>Marketing & Distribution Pipeline &middot; Release: {fmt(releaseDate)}</p>
+          </div>
+          <div style={{textAlign:"right",fontSize:10,color:"#999"}}>
+            <div>Exported {new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
+            <div>{new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</div>
           </div>
         </div>
-        {disciplines.filter(d=>d.tasks.length>0).map(disc => (
-          <div key={disc.id} style={{marginBottom:28,pageBreakInside:"avoid"}}>
-            <h2 style={{fontSize:16,fontWeight:700,color:disc.color,margin:"0 0 10px",paddingBottom:6,borderBottom:`2px solid ${disc.color}33`}}>{disc.name}</h2>
-            <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+
+        {/* Executive Summary Stats */}
+        <div style={{display:"flex",gap:8,marginBottom:20}}>
+          <div style={statBox}><div style={statNum}>{totalTasks}</div><div style={statLbl}>Total Tasks</div></div>
+          <div style={statBox}><div style={{...statNum,color:STATUS_COLORS["not-started"]}}>{ns}</div><div style={statLbl}>Not Started</div></div>
+          <div style={statBox}><div style={{...statNum,color:STATUS_COLORS["in-progress"]}}>{ip}</div><div style={statLbl}>In Progress</div></div>
+          <div style={statBox}><div style={{...statNum,color:STATUS_COLORS["complete"]}}>{co}</div><div style={statLbl}>Complete</div></div>
+          {bl > 0 && <div style={statBox}><div style={{...statNum,color:STATUS_COLORS["blocked"]}}>{bl}</div><div style={statLbl}>Blocked</div></div>}
+          <div style={statBox}><div style={{...statNum,color:campaignColor}}>{pct}%</div><div style={statLbl}>Progress</div></div>
+        </div>
+
+        {/* Campaign Overview Table */}
+        <div style={{marginBottom:20}}>
+          <h2 style={secTitle("Campaign Overview")}>Campaign Overview</h2>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <tbody style={{fontSize:11}}>
+              <tr><td style={{padding:"4px 0",color:"#888",width:160}}>Project Name</td><td style={{padding:"4px 0",fontWeight:600}}>{projectName}</td></tr>
+              <tr><td style={{padding:"4px 0",color:"#888"}}>Release Date</td><td style={{padding:"4px 0",fontWeight:600}}>{fmt(releaseDate)}</td></tr>
+              <tr><td style={{padding:"4px 0",color:"#888"}}>Campaign Start</td><td style={{padding:"4px 0",fontWeight:600}}>{fmt(earliest)}</td></tr>
+              <tr><td style={{padding:"4px 0",color:"#888"}}>Active Disciplines</td><td style={{padding:"4px 0",fontWeight:600}}>{activeDiscs.length} of {disciplines.length}</td></tr>
+              <tr><td style={{padding:"4px 0",color:"#888"}}>Days to Release</td><td style={{padding:"4px 0",fontWeight:600}}>{Math.max(0, daysBetween(todayStr(), releaseDate))} days</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Discipline Progress Breakdown */}
+        <div style={{marginBottom:20}}>
+          <h2 style={secTitle("Discipline Progress")}>Discipline Progress</h2>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead><tr style={{background:"#f5f5f7"}}>
+              <th style={thS}>Discipline</th>
+              <th style={{...thS,width:50,textAlign:"center"}}>Tasks</th>
+              <th style={{...thS,width:50,textAlign:"center"}}>Done</th>
+              <th style={{...thS,width:50,textAlign:"center"}}>Active</th>
+              <th style={{...thS,width:180}}>Progress</th>
+            </tr></thead>
+            <tbody>
+              {activeDiscs.map(d => {
+                const dt = d.tasks.length;
+                const dc = d.tasks.filter(t=>t.status==="complete").length;
+                const da = d.tasks.filter(t=>t.status==="in-progress").length;
+                const dp = dt > 0 ? Math.round((dc/dt)*100) : 0;
+                return (
+                  <tr key={d.id}>
+                    <td style={{...tdS,fontWeight:600,color:d.color}}>{d.name}</td>
+                    <td style={{...tdS,textAlign:"center"}}>{dt}</td>
+                    <td style={{...tdS,textAlign:"center",color:"#10b981",fontWeight:600}}>{dc}</td>
+                    <td style={{...tdS,textAlign:"center",color:"#3b82f6",fontWeight:600}}>{da}</td>
+                    <td style={tdS}>
+                      <div style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{flex:1,height:8,background:"#e5e7eb",borderRadius:4,overflow:"hidden"}}>
+                          <div style={{width:dp+"%",height:"100%",background:d.color,borderRadius:4,transition:"width .3s"}} />
+                        </div>
+                        <span style={{fontSize:9,fontWeight:700,color:"#555",minWidth:28}}>{dp}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Blocked Tasks Alert */}
+        {blocked.length > 0 && (
+          <div style={{marginBottom:20,padding:"10px 14px",background:"#fef2f2",border:"1px solid #fecaca",borderRadius:6}}>
+            <h3 style={{fontSize:12,fontWeight:800,color:"#dc2626",margin:"0 0 6px"}}>&#9888; Blocked Tasks ({blocked.length})</h3>
+            {blocked.map(t => (
+              <div key={t.id} style={{fontSize:10,padding:"3px 0",color:"#991b1b"}}>
+                <strong>{t.disciplineName}:</strong> {t.title} ({fmt(t.startDate)} – {fmt(t.endDate)})
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Upcoming / Active Work */}
+        {upcoming.length > 0 && (
+          <div style={{marginBottom:8,padding:"10px 14px",background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:6}}>
+            <h3 style={{fontSize:12,fontWeight:800,color:"#1d4ed8",margin:"0 0 6px"}}>&#128337; Active & Upcoming (Next 14 Days) — {upcoming.length} tasks</h3>
+            {upcoming.slice(0,12).map(t => (
+              <div key={t.id} style={{fontSize:10,padding:"3px 0",color:"#1e3a5f",display:"flex",gap:6}}>
+                <span style={badge(t.status)}>{STATUS_LABELS[t.status]}</span>
+                <strong>{t.disciplineName}:</strong> {t.title} ({fmt(t.startDate)} – {fmt(t.endDate)})
+              </div>
+            ))}
+            {upcoming.length > 12 && <div style={{fontSize:9,color:"#6b7280",marginTop:4}}>+ {upcoming.length - 12} more tasks</div>}
+          </div>
+        )}
+
+        {/* Page break before detailed task lists */}
+        <div style={{pageBreakBefore:"always"}} />
+
+        {/* Detailed Task Lists Per Discipline */}
+        {activeDiscs.map((disc, di) => (
+          <div key={disc.id} style={{marginBottom:24,pageBreakInside:"avoid"}}>
+            <h2 style={secTitle(disc.name, disc.color)}>{disc.name}
+              <span style={{fontSize:10,fontWeight:500,color:"#888",marginLeft:8}}>
+                ({disc.tasks.filter(t=>t.status==="complete").length}/{disc.tasks.length} complete)
+              </span>
+            </h2>
+            <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{background:"#f5f5f7"}}>
-                <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd"}}>Task</th>
-                <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:90}}>Start</th>
-                <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:90}}>End</th>
-                <th style={{textAlign:"left",padding:"6px 10px",fontWeight:700,color:"#555",borderBottom:"1px solid #ddd",width:80}}>Status</th>
+                <th style={{...thS,width:"28%"}}>Task</th>
+                <th style={{...thS,width:"28%"}}>Description</th>
+                <th style={{...thS,width:70}}>Start</th>
+                <th style={{...thS,width:70}}>End</th>
+                <th style={{...thS,width:55}}>Status</th>
+                <th style={{...thS,width:"16%"}}>Owner / Roles</th>
               </tr></thead>
               <tbody>
                 {disc.tasks.map(t => (
                   <tr key={t.id}>
-                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontWeight:500}}>{t.title}</td>
-                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{fmt(t.startDate)}</td>
-                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee",fontSize:11,color:"#666"}}>{fmt(t.endDate)}</td>
-                    <td style={{padding:"5px 10px",borderBottom:"1px solid #eee"}}><span style={{fontSize:10,padding:"2px 6px",borderRadius:3,background:STATUS_COLORS[t.status]+"22",color:STATUS_COLORS[t.status],fontWeight:700}}>{STATUS_LABELS[t.status]}</span></td>
+                    <td style={{...tdS,fontWeight:600}}>{t.title}</td>
+                    <td style={{...tdS,color:"#555",fontSize:9,lineHeight:1.4}}>{(t.description || "—").slice(0, 160)}{(t.description||"").length > 160 ? "…" : ""}</td>
+                    <td style={{...tdS,fontSize:9,color:"#666",whiteSpace:"nowrap"}}>{fmt(t.startDate)}</td>
+                    <td style={{...tdS,fontSize:9,color:"#666",whiteSpace:"nowrap"}}>{fmt(t.endDate)}</td>
+                    <td style={tdS}><span style={badge(t.status)}>{STATUS_LABELS[t.status]}</span></td>
+                    <td style={{...tdS,fontSize:9,color:"#666"}}>{(t.roles || []).join(", ") || "—"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         ))}
-        <div style={{marginTop:40,paddingTop:16,borderTop:"1px solid #ddd",fontSize:10,color:"#aaa",textAlign:"center"}}>Generated {new Date().toLocaleDateString()} &middot; Film Marketing & Distribution Pipeline</div>
+
+        {/* Footer */}
+        <div style={{marginTop:32,paddingTop:12,borderTop:"1px solid #ddd",fontSize:9,color:"#aaa",display:"flex",justifyContent:"space-between"}}>
+          <span>{projectName} — Marketing & Distribution Pipeline</span>
+          <span>Generated {new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})} at {new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}</span>
+        </div>
       </div>
     );
   }
