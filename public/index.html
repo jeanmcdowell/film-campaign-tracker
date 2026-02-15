@@ -848,7 +848,7 @@ function App() {
                 <div style={{height:rowH,background:disc.color+"08",borderBottom:"1px solid #f0f0f0"}} />
                 {disc.tasks.filter(t=>t.startDate&&t.endDate).map(task => (
                   <div key={task.id} style={{height:rowH,position:"relative",borderBottom:"1px solid #f8f8f8"}}>
-                    <div onClick={()=>setEditingTask({task, discId:disc.id})} style={{position:"absolute",left:getX(task.startDate),width:Math.max(daysBetween(task.startDate, task.endDate) * dayWidth, 6),height:18,top:5,borderRadius:4,background:STATUS_COLORS[task.status],opacity:0.85,cursor:"pointer"}} title={`${task.title}: ${fmt(task.startDate)} \u2013 ${fmt(task.endDate)}`} />
+                    <div onClick={()=>setEditingTask({task, discId:disc.id})} style={{position:"absolute",left:getX(task.startDate),width:Math.max(daysBetween(task.startDate, task.endDate) * dayWidth, 6),height:18,top:5,borderRadius:4,background:STATUS_COLORS[task.status],borderLeft:`4px solid ${campaignColor}`,opacity:0.85,cursor:"pointer"}} title={`${task.title}: ${fmt(task.startDate)} \u2013 ${fmt(task.endDate)}`} />
                   </div>
                 ))}
               </React.Fragment>
@@ -890,7 +890,7 @@ function App() {
         <div key={day} style={{background:isRelease?"#fef2f2":isToday?"#eff6ff":"#fff",borderRadius:4,padding:"4px 6px",minHeight:80,border:isRelease?"2px solid #ef4444":isToday?"2px solid #3b82f6":"1px solid #eee",overflow:"hidden"}}>
           <div style={{fontSize:12,fontWeight:isToday||isRelease?700:500,color:isRelease?"#ef4444":isToday?"#3b82f6":"#555",marginBottom:4}}>{day}{isRelease ? " \u{1F3AC}" : ""}</div>
           {tasks.slice(0, 3).map(t => (
-            <div key={t.id} onClick={()=>{ const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id)); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:t.disciplineColor+"22",color:t.disciplineColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}} title={t.title}>{t.title}</div>
+            <div key={t.id} onClick={()=>{ const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id)); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:campaignColor+"18",color:campaignColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${campaignColor}`}} title={t.title}>{t.title}</div>
           ))}
           {tasks.length > 3 && <div style={{fontSize:9,color:"#999"}}>+{tasks.length-3} more</div>}
         </div>
@@ -1035,7 +1035,7 @@ function App() {
             <div style={{maxHeight:120,overflow:"auto"}}>
               <div style={{fontSize:9,color:"#666",marginBottom:3,textTransform:"uppercase",letterSpacing:"0.04em"}}>Saved</div>
               {Object.entries(savedCampaigns).map(([id, c]) => (
-                <div key={id} style={{display:"flex",alignItems:"center",gap:4,padding:"5px 6px",marginBottom:1,borderRadius:4,background:id===campaignId?"rgba(255,255,255,0.12)":"transparent",cursor:"pointer"}} onClick={()=>loadCampaign(id)}>
+                <div key={id} style={{display:"flex",alignItems:"center",gap:6,padding:"5px 6px",marginBottom:2,borderRadius:4,background:id===campaignId?"rgba(255,255,255,0.12)":"transparent",cursor:"pointer",borderLeft:`3px solid ${c.campaignColor||"#7c3aed"}`,transition:"background .1s"}} onClick={()=>loadCampaign(id)}>
                   <div style={{width:8,height:8,borderRadius:"50%",background:c.campaignColor||"#7c3aed",flexShrink:0}} />
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:10,color:id===campaignId?"#fff":"#aaa",fontWeight:id===campaignId?600:400,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{c.projectName||"Untitled"}</div>
