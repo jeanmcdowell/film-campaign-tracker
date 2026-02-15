@@ -552,18 +552,23 @@ function App() {
     const toggle = id => setOpenDiscs(p => ({...p, [id]: !p[id]}));
     const [showOther, setShowOther] = useState(false);
     const totalTasks = allTasks.length;
-    const completeTasks = allTasks.filter(t => t.status === "complete").length;
+    const notStartedTasks = allTasks.filter(t => t.status === "not-started").length;
     const inProgressTasks = allTasks.filter(t => t.status === "in-progress").length;
+    const completeTasks = allTasks.filter(t => t.status === "complete").length;
+    const blockedTasks = allTasks.filter(t => t.status === "blocked").length;
+    const pctComplete = totalTasks > 0 ? Math.round((completeTasks / totalTasks) * 100) : 0;
 
     return (
       <div>
-        {/* Stats */}
+        {/* Stats Dashboard */}
         <div style={{display:"flex",gap:12,flexWrap:"wrap",marginBottom:24}}>
           {[
-            {label:"Disciplines", value: disciplines.length, color: campaignColor},
-            {label:"Total Tasks", value: totalTasks, color:"#0ea5e9"},
-            {label:"In Progress", value: inProgressTasks, color:"#3b82f6"},
-            {label:"Complete", value: completeTasks, color:"#10b981"},
+            {label:"Total Tasks", value: totalTasks, color: campaignColor},
+            {label:"Not Started", value: notStartedTasks, color: STATUS_COLORS["not-started"]},
+            {label:"In Progress", value: inProgressTasks, color: STATUS_COLORS["in-progress"]},
+            {label:"Complete", value: completeTasks, color: STATUS_COLORS["complete"]},
+            ...(blockedTasks > 0 ? [{label:"Blocked", value: blockedTasks, color: STATUS_COLORS["blocked"]}] : []),
+            {label:"Progress", value: pctComplete + "%", color:"#10b981"},
             {label:"Release", value: fmt(releaseDate), color:"#ea580c"}
           ].map(s => (
             <div key={s.label} style={{background:"#fff",borderRadius:8,padding:"12px 18px",minWidth:100,borderLeft:`3px solid ${s.color}`,boxShadow:"0 1px 3px rgba(0,0,0,0.06)"}}>
@@ -587,7 +592,10 @@ function App() {
         {/* M&D Disciplines */}
         {disciplines.map(disc => {
           const isOpen = openDiscs[disc.id];
-          const done = disc.tasks.filter(t=>t.status==="complete").length;
+          const discNotStarted = disc.tasks.filter(t=>t.status==="not-started").length;
+          const discInProgress = disc.tasks.filter(t=>t.status==="in-progress").length;
+          const discComplete = disc.tasks.filter(t=>t.status==="complete").length;
+          const discBlocked = disc.tasks.filter(t=>t.status==="blocked").length;
           const isLibraryDisc = !!TASK_LIBRARY[disc.name];
           const libraryCount = isLibraryDisc ? TASK_LIBRARY[disc.name].length : 0;
           return (
@@ -598,9 +606,18 @@ function App() {
                   <div>
                     <div style={{fontSize:15,fontWeight:600,color:"#1a1a2e"}}>{disc.name}</div>
                     <div style={{fontSize:11,color:"#888",marginTop:2}}>
-                      {disc.tasks.length} task{disc.tasks.length !== 1 ? "s" : ""} added
-                      {disc.tasks.length > 0 ? ` \u00b7 ${done}/${disc.tasks.length} complete` : ""}
-                      {isLibraryDisc ? ` \u00b7 ${libraryCount} in library` : " \u00b7 Custom"}
+                      {disc.tasks.length > 0 ? (
+                        <span>
+                          <span style={{color:STATUS_COLORS["not-started"]}}>{discNotStarted} not started</span>
+                          {" \u00b7 "}
+                          <span style={{color:STATUS_COLORS["in-progress"]}}>{discInProgress} active</span>
+                          {" \u00b7 "}
+                          <span style={{color:STATUS_COLORS["complete"]}}>{discComplete} done</span>
+                          {discBlocked > 0 ? <span>{" \u00b7 "}<span style={{color:STATUS_COLORS["blocked"]}}>{discBlocked} blocked</span></span> : null}
+                        </span>
+                      ) : (
+                        <span>{isLibraryDisc ? `${libraryCount} tasks in library` : "Custom discipline"} — no tasks added yet</span>
+                      )}
                     </div>
                   </div>
                 </button>
