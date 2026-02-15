@@ -973,7 +973,7 @@ function App() {
           {visibleTasks.map(t => {
             const disc = disciplines.find(d=>d.tasks.some(tk=>tk.id===t.id));
             const discColor = disc ? disc.color : campaignColor;
-            const pillColor = (isExpanded || calendarDiscFilter !== "all") ? discColor : campaignColor;
+            const pillColor = discColor;
             return (
               <div key={t.id} onClick={(e)=>{ e.stopPropagation(); if(disc) setEditingTask({task:t,discId:disc.id}); }} style={{fontSize:9,padding:"2px 4px",marginBottom:2,borderRadius:3,background:pillColor+"18",color:pillColor,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pillColor}`}} title={t.title}>{t.title}</div>
             );
