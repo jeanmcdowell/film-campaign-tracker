@@ -23,17 +23,21 @@
   textarea { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; resize: vertical; }
 
   @media print {
-    body { background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    html, body { height: auto !important; overflow: visible !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    * { overflow: visible !important; }
     .no-print { display: none !important; }
     .print-only { display: block !important; }
-    .print-break { page-break-before: always; }
-    #root > div { display: block !important; height: auto !important; overflow: visible !important; }
+    .print-break { page-break-before: always; break-before: page; }
+    #root, #root > div { display: block !important; height: auto !important; overflow: visible !important; position: static !important; }
     .sidebar-container { display: none !important; }
-    .main-scroll { overflow: visible !important; height: auto !important; }
+    .main-scroll { overflow: visible !important; height: auto !important; max-height: none !important; }
     .gantt-scroll { overflow: visible !important; }
     .print-header { display: flex !important; align-items: center; gap: 16px; padding: 24px 0; border-bottom: 3px solid #1a1a2e; margin-bottom: 24px; }
     .print-header h1 { font-size: 28px; }
     .print-header p { color: #666; font-size: 14px; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; break-inside: avoid; }
+    thead { display: table-header-group; }
   }
 </style>
 </head>
@@ -1093,7 +1097,7 @@ function App() {
         )}
 
         {/* Page break before detailed task lists */}
-        <div style={{pageBreakBefore:"always"}} />
+        <div className="print-break" style={{pageBreakBefore:"always",breakBefore:"page"}} />
 
         {/* Detailed Task Lists Per Discipline */}
         {activeDiscs.map((disc, di) => (
