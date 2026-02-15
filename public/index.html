@@ -39,6 +39,7 @@
     tr { page-break-inside: avoid; break-inside: avoid; }
     thead { display: table-header-group; }
   }
+  .print-only { display: none; }
 </style>
 </head>
 <body>
@@ -282,6 +283,8 @@ function App() {
   const [addingTaskDisc, setAddingTaskDisc] = useState(null); // {discId, discName}
   const [addingDiscipline, setAddingDiscipline] = useState(false);
   const [printMode, setPrintMode] = useState(null);
+  const [showCalendarPrintDialog, setShowCalendarPrintDialog] = useState(false);
+  const [calendarPrintRange, setCalendarPrintRange] = useState({ startMonth: "", endMonth: "" });
 
   /* ── Campaign Persistence (Firebase Cloud + localStorage fallback) */
   const fileInputRef = useRef(null);
@@ -439,7 +442,22 @@ function App() {
     const slug = projectName.replace(/[^a-z0-9]+/gi,"-").toLowerCase();
     const origTitle = document.title;
     document.title = slug + "-" + mode + "-" + stamp;
-    setTimeout(() => { window.print(); setTimeout(() => { setPrintMode(null); document.title = origTitle; }, 500); }, 200);
+    // Inject landscape @page for calendar mode
+    let styleTag = null;
+    if (mode === "calendar") {
+      styleTag = document.createElement("style");
+      styleTag.textContent = "@page { size: letter landscape; margin: 0.4in; }";
+      document.head.appendChild(styleTag);
+    }
+    setTimeout(() => { window.print(); setTimeout(() => { setPrintMode(null); document.title = origTitle; if (styleTag) document.head.removeChild(styleTag); }, 500); }, 200);
+  };
+
+  const handleCalendarPrint = () => {
+    const sm = calendarPrintRange.startMonth;
+    const em = calendarPrintRange.endMonth;
+    if (!sm || !em || sm > em) { alert("Please select a valid month range."); return; }
+    setShowCalendarPrintDialog(false);
+    handlePrint("calendar");
   };
 
   /* ── TASK DETAIL MODAL ──────────────────────────────────── */
@@ -1262,6 +1280,104 @@ function App() {
     );
   }
 
+  /* ── CALENDAR PRINT VIEW ─────────────────────────────────── */
+  if (printMode === "calendar") {
+    const sm = calendarPrintRange.startMonth;
+    const em = calendarPrintRange.endMonth;
+    const months = [];
+    if (sm && em) {
+      let cur = sm;
+      while (cur <= em) {
+        months.push(cur);
+        const [y2, m2] = cur.split("-").map(Number);
+        const nd = new Date(y2, m2, 1);
+        cur = nd.getFullYear() + "-" + String(nd.getMonth()+1).padStart(2,"0");
+      }
+    }
+    const getCalTasks = (yr, mo, day) => {
+      const dateStr = `${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+      return allTasks.filter(t => t.startDate && t.endDate && dateStr >= t.startDate && dateStr <= t.endDate);
+    };
+    return (
+      <div className="print-landscape" style={{background:"#fff",padding:0}}>
+        {months.map((mStr, mIdx) => {
+          const [yr, mo] = mStr.split("-").map(Number);
+          const moIdx = mo - 1;
+          const first = new Date(yr, moIdx, 1).getDay();
+          const dim = new Date(yr, moIdx + 1, 0).getDate();
+          const moLabel = new Date(yr, moIdx, 1).toLocaleDateString("en-US", {month:"long", year:"numeric"});
+          const cells2 = [];
+          for (let i = 0; i < first; i++) cells2.push(<td key={`e${i}`} style={{background:"#fafafa",border:"1px solid #e5e7eb"}}></td>);
+          for (let day = 1; day <= dim; day++) {
+            const dateStr = `${yr}-${String(moIdx+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+            const tasks = getCalTasks(yr, moIdx, day);
+            const isRelease = dateStr === releaseDate;
+            cells2.push(
+              <td key={day} style={{border:"1px solid #d1d5db",verticalAlign:"top",padding:"2px 3px",height:72,width:"14.28%",background:isRelease?"#fef2f2":"#fff",position:"relative"}}>
+                <div style={{fontSize:10,fontWeight:isRelease?800:600,color:isRelease?"#ef4444":"#333",marginBottom:2}}>{day}{isRelease ? " \u{1F3AC}" : ""}</div>
+                {tasks.slice(0,5).map(t => {
+                  const pc = t.disciplineColor || campaignColor;
+                  return <div key={t.id} style={{fontSize:7,padding:"1px 3px",marginBottom:1,borderRadius:2,background:pc+"18",color:pc,fontWeight:600,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",borderLeft:`2px solid ${pc}`,lineHeight:"1.3"}}>{t.title}</div>;
+                })}
+                {tasks.length > 5 && <div style={{fontSize:7,color:"#999",fontWeight:600}}>+{tasks.length-5} more</div>}
+              </td>
+            );
+          }
+          // Fill remaining cells
+          const totalCells = cells2.length;
+          const remainder = totalCells % 7;
+          if (remainder > 0) for (let i = 0; i < 7 - remainder; i++) cells2.push(<td key={`t${i}`} style={{background:"#fafafa",border:"1px solid #e5e7eb"}}></td>);
+          // Build rows
+          const rows = [];
+          for (let r = 0; r < cells2.length; r += 7) rows.push(cells2.slice(r, r + 7));
+
+          return (
+            <div key={mStr} className={mIdx > 0 ? "print-break" : ""} style={{pageBreakAfter: mIdx < months.length - 1 ? "always" : "auto", padding:"0.2in 0"}}>
+              {/* Month Header */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,paddingBottom:8,borderBottom:`3px solid ${campaignColor}`}}>
+                <div>
+                  <div style={{fontSize:22,fontWeight:800,color:"#1a1a2e"}}>{moLabel}</div>
+                  <div style={{fontSize:11,color:"#666",marginTop:2}}>{projectName} &mdash; Campaign Calendar</div>
+                </div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:10,height:10,borderRadius:"50%",background:campaignColor}} />
+                  <div style={{fontSize:10,color:"#888"}}>Page {mIdx+1} of {months.length}</div>
+                </div>
+              </div>
+              {/* Discipline color legend */}
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:8}}>
+                {disciplines.filter(d=>d.tasks.length>0).map(d=>(
+                  <div key={d.id} style={{display:"flex",alignItems:"center",gap:4,fontSize:8}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:d.color}} />
+                    <span style={{color:"#666"}}>{d.name}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Calendar table */}
+              <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+                <thead>
+                  <tr>
+                    {["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"].map(d=>(
+                      <th key={d} style={{fontSize:9,fontWeight:700,color:"#666",textAlign:"center",padding:"4px 0",borderBottom:"2px solid #d1d5db",background:"#f8fafc",width:"14.28%"}}>{d}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, ri)=>(
+                    <tr key={ri}>{row}</tr>
+                  ))}
+                </tbody>
+              </table>
+              {mIdx === months.length - 1 && (
+                <div style={{marginTop:12,fontSize:8,color:"#aaa",textAlign:"center"}}>Generated {new Date().toLocaleDateString()} &mdash; Release: {new Date(releaseDate + "T12:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   /* ── MAIN LAYOUT ────────────────────────────────────────── */
   return (
     <div style={{display:"flex",height:"100vh",background:"#f5f5f7"}}>
@@ -1358,7 +1474,8 @@ function App() {
         <div style={{padding:"10px 12px",borderTop:"1px solid rgba(255,255,255,0.08)"}}>
           <div style={{fontSize:10,fontWeight:700,color:"#8888aa",textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>Export PDF</div>
           <button onClick={()=>handlePrint("overview")} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer",marginBottom:4}}>Project Overview</button>
-          <button onClick={()=>handlePrint("timeline")} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer"}}>Timeline Export</button>
+          <button onClick={()=>handlePrint("timeline")} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer",marginBottom:4}}>Timeline Export</button>
+          <button onClick={()=>{ const now = new Date(); const sm = now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0"); const em3 = new Date(now.getFullYear(), now.getMonth()+2, 1); const emStr = em3.getFullYear()+"-"+String(em3.getMonth()+1).padStart(2,"0"); setCalendarPrintRange({startMonth:sm,endMonth:emStr}); setShowCalendarPrintDialog(true); }} style={{width:"100%",padding:"7px 0",borderRadius:5,border:"1px solid rgba(255,255,255,0.15)",background:"transparent",color:"#ccc",fontSize:11,cursor:"pointer"}}>Calendar Export</button>
         </div>
       </div>
 
@@ -1377,6 +1494,45 @@ function App() {
       {editingTask && <TaskModal task={editingTask.task} discId={editingTask.discId} onClose={()=>setEditingTask(null)} />}
       {addingTaskDisc && <AddTaskModal discId={addingTaskDisc.discId} discName={addingTaskDisc.discName} onClose={()=>setAddingTaskDisc(null)} />}
       {addingDiscipline && <AddDisciplineModal onClose={()=>setAddingDiscipline(false)} />}
+
+      {/* Calendar Print Dialog */}
+      {showCalendarPrintDialog && (
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}} onClick={()=>setShowCalendarPrintDialog(false)}>
+          <div style={{background:"#fff",borderRadius:12,width:400,padding:28,boxShadow:"0 20px 60px rgba(0,0,0,0.2)"}} onClick={e=>e.stopPropagation()}>
+            <h3 style={{fontSize:18,fontWeight:700,marginBottom:4,color:"#1a1a2e"}}>Print Calendar</h3>
+            <p style={{fontSize:12,color:"#666",marginBottom:16}}>Select the month range to print. Each month will be printed on its own landscape letter page.</p>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#555",display:"block",marginBottom:4}}>Start Month</label>
+                <input type="month" value={calendarPrintRange.startMonth} onChange={e=>setCalendarPrintRange(prev=>({...prev,startMonth:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:6,fontSize:13}} />
+              </div>
+              <div>
+                <label style={{fontSize:11,fontWeight:600,color:"#555",display:"block",marginBottom:4}}>End Month</label>
+                <input type="month" value={calendarPrintRange.endMonth} onChange={e=>setCalendarPrintRange(prev=>({...prev,endMonth:e.target.value}))} style={{width:"100%",padding:"8px 10px",border:"1px solid #d1d5db",borderRadius:6,fontSize:13}} />
+              </div>
+            </div>
+            {/* Quick range buttons */}
+            <div style={{display:"flex",gap:6,marginBottom:16,flexWrap:"wrap"}}>
+              {[1,3,6,12].map(n => {
+                const now2 = new Date();
+                const startM = now2.getFullYear()+"-"+String(now2.getMonth()+1).padStart(2,"0");
+                const endD = new Date(now2.getFullYear(), now2.getMonth()+n-1, 1);
+                const endM = endD.getFullYear()+"-"+String(endD.getMonth()+1).padStart(2,"0");
+                return <button key={n} onClick={()=>setCalendarPrintRange({startMonth:startM,endMonth:endM})} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #ddd",background:calendarPrintRange.startMonth===startM && calendarPrintRange.endMonth===endM?campaignColor+"15":"#fff",color:calendarPrintRange.startMonth===startM && calendarPrintRange.endMonth===endM?campaignColor:"#555",fontSize:11,fontWeight:600,cursor:"pointer"}}>{n} Month{n>1?"s":""}</button>;
+              })}
+            </div>
+            {calendarPrintRange.startMonth && calendarPrintRange.endMonth && calendarPrintRange.startMonth <= calendarPrintRange.endMonth && (
+              <div style={{fontSize:11,color:"#888",marginBottom:12}}>
+                {(() => { const [sy,sm2]=calendarPrintRange.startMonth.split("-").map(Number); const [ey,em2]=calendarPrintRange.endMonth.split("-").map(Number); return (ey-sy)*12+(em2-sm2)+1; })()} page{(() => { const [sy,sm2]=calendarPrintRange.startMonth.split("-").map(Number); const [ey,em2]=calendarPrintRange.endMonth.split("-").map(Number); return (ey-sy)*12+(em2-sm2)+1; })() > 1 ? "s" : ""} will be generated (landscape letter)
+              </div>
+            )}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={()=>setShowCalendarPrintDialog(false)} style={{padding:"8px 16px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#666",fontSize:12,cursor:"pointer"}}>Cancel</button>
+              <button onClick={handleCalendarPrint} style={{padding:"8px 20px",borderRadius:6,border:"none",background:campaignColor,color:"#fff",fontSize:12,fontWeight:600,cursor:"pointer"}}>Print Calendar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
